@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ECommerce\DemandController;
 use App\Http\Controllers\ECommerce\ViewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
@@ -63,6 +64,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // E-Commerce View
     Route::get('e-commerce/view', [ViewController::class, 'index'])->name('e-commerce.view');
+
+    // Demand Barang
+    Route::get('e-commerce/view/data', [DemandController::class, 'index'])->name('e-commerce.view.data');
+    Route::get('e-commerce/view/data/create', [DemandController::class, 'create'])->name('e-commerce.view.create');
+    Route::post('e-commerce/view/data/store', [DemandController::class, 'store'])->name('e-commerce.view.store');
+    Route::post('e-commerce/view/data/edit/{id}', [DemandController::class, 'edit'])->name('e-commerce.view.edit');
+    Route::post('e-commerce/view/data/update/{id}', [DemandController::class, 'update'])->name('e-commerce.view.update');
+    Route::post('e-commerce/view/data/delete/{id}', [DemandController::class, 'delete'])->name('e-commerce.view.delete');
 });
 
 
