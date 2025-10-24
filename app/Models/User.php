@@ -16,6 +16,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
         'name',
         'username', // ✅ ubah dari email ke username
         'password',
@@ -49,7 +50,7 @@ class User extends Authenticatable
      */
     public function surveys()
     {
-        return $this->hasMany(Survey::class);
+        return $this->hasMany(Survey::class, 'user_id');
     }
 
     /**

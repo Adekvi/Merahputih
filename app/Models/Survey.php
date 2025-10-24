@@ -12,6 +12,7 @@ class Survey extends Model
     protected $table = 'surveys';
 
     protected $fillable = [
+        'id',
         'no_id',
         'kecamatan',
         'desa',
@@ -34,6 +35,6 @@ class Survey extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

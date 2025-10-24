@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ECommerce\ViewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SurveyController;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 | Halaman Awal (Login)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -58,6 +60,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [SurveyController::class, 'store'])->name('store');
         Route::get('/voice', [SurveyController::class, 'createvoice'])->name('voicecreate');
     });
+
+    // E-Commerce View
+    Route::get('e-commerce/view', [ViewController::class, 'index'])->name('e-commerce.view');
 });
+
 
 require __DIR__ . '/auth.php';

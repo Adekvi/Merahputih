@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Seeders;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,6 +22,7 @@ class ContohSurveySeeder extends Seeder
         =====================================
         */
         $surveyId = DB::table('surveys')->insertGetId([
+            'user_id' => 1,
             'no_id' => 'KEC001-DESA001-20251021',
             'kecamatan' => 'Kecamatan Contoh',
             'desa' => 'Desa A',
