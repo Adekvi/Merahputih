@@ -340,7 +340,7 @@
 
                     $.ajax({
                         url: '{{ route('getKelurahan') }}',
-                        method: 'POST',
+                        method: 'GET',
                         data: {
                             id_kecamatan: kecamatanId,
                             _token: '{{ csrf_token() }}'

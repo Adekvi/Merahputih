@@ -17,6 +17,7 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body bg-light rounded-4">
                 <form method="GET" action="{{ route('e-commerce.market') }}" class="row g-3 align-items-end">
+                    @csrf
                     <div class="col-6 col-md-3">
                         <label for="id_kecamatan" class="form-label fw-semibold small">Kecamatan</label>
                         <select name="id_kecamatan" id="id_kecamatan" class="form-select form-select-sm">
@@ -33,14 +34,11 @@
                         <label for="id_kelurahan" class="form-label fw-semibold small">Kelurahan</label>
                         <select name="id_kelurahan" id="id_kelurahan" class="form-select form-select-sm">
                             <option value="">-- Pilih Kelurahan --</option>
-                            @if ($id_kecamatan)
-                                @foreach ($kelurahan as $kel)
-                                    <option value="{{ $kel->id }}"
-                                        {{ $id_kelurahan == $kel->id ? 'selected' : '' }}>
-                                        {{ $kel->nama_kelurahan }}
-                                    </option>
-                                @endforeach
-                            @endif
+                            @foreach ($kelurahan as $kel)
+                                <option value="{{ $kel->id }}" {{ $id_kelurahan == $kel->id ? 'selected' : '' }}>
+                                    {{ $kel->nama_kelurahan }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-12 col-md-3 d-flex gap-2">
@@ -62,8 +60,9 @@
                     <div class="judul">
                         <h4 class="text-center fw-bold">Produk</h4>
                         <hr>
-                        <form action="{{ route('e-commerce.market') }}" method="POST" enctype="multipart/form-data"
+                        <form action="{{ route('e-commerce.market') }}" method="GET" enctype="multipart/form-data"
                             class="row g-3 align-items-end">
+                            @csrf
                             <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.2s"
                                 style="max-width: 800px;">
 
@@ -81,11 +80,28 @@
 
                                     <!-- Input Search -->
                                     <div class="input-group" style="max-width: 350px;">
-                                        <input type="text" name="search" id="search"
-                                            class="form-control rounded-start-3" placeholder="Nama, jenis, supplier..."
-                                            value="{{ $search }}">
-                                        <button class="btn btn-maroon rounded-end-3 text-white"
-                                            onclick="clearSearch()">Clear</button>
+                                        <div class="input-group">
+                                            <input type="text" name="search" id="search" class="form-control"
+                                                placeholder="Nama, jenis, supplier..." value="{{ $search }}">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{{ route('e-commerce.market', array_merge(request()->query(), ['type' => 'supply'])) }}"
+                                            class="btn {{ request('type') === 'supply' ? 'btn-success' : 'btn-outline-success' }} rounded-start">
+                                            <i class="fas fa-box me-1"></i> Penawaran
+                                        </a>
+                                        <a href="{{ route('e-commerce.market', array_merge(request()->query(), ['type' => 'demand'])) }}"
+                                            class="btn {{ request('type') === 'demand' ? 'btn-info' : 'btn-outline-info' }}">
+                                            <i class="fas fa-shopping-cart me-1"></i> Permintaan
+                                        </a>
+                                        <a href="{{ route('e-commerce.market', request()->except('type')) }}"
+                                            class="btn {{ !request('type') ? 'btn-secondary' : 'btn-outline-secondary' }} rounded-end">
+                                            <i class="fas fa-th-large me-1"></i> Semua
+                                        </a>
                                     </div>
                                 </div>
 
@@ -95,8 +111,22 @@
 
                     <div class="row g-4">
                         @if ($market->isEmpty())
-                            <div class="alert alert-info text-center">
-                                <i class="fas fa-info-circle"></i> Tidak ada data barang yang ditemukan.
+                            <div class="alert alert-info d-flex align-items-center justify-content-center text-center"
+                                style="gap: 10px;">
+                                <i class="fas fa-info-circle" style="font-size: 35px; color: #ff9d00;"></i>
+                                <div>
+                                    @if ($search)
+                                        <p style="font-size: 16px; margin: 0;">
+                                            <strong>Data dengan kata kunci "{{ $search }}" tidak
+                                                ditemukan.</strong><br>
+                                            <small>Coba gunakan kata kunci lain atau hapus filter.</small>
+                                        </p>
+                                    @else
+                                        <p style="font-size: 16px; margin: 0;">
+                                            Tidak ada data barang yang tersedia saat ini.
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
                         @else
                             <?php
@@ -108,24 +138,79 @@
                             }
                             ?>
                             @foreach ($market as $item)
-                                <div class="col-sm-6 col-md-4 col-lg-3">
-                                    <div class="card product-card h-100">
-                                        <div class="image-container">
-                                            <img src="{{ $item['gambar'] }}" class="card-img-top"
-                                                alt="{{ $item['nama'] }}">
+                                @php
+                                    // Tentukan sumber data
+                                    $isSupply = isset($item->suply);
+                                    $data = $isSupply ? $item->suply : $item->demand;
+
+                                    // Tentukan label dan warna badge
+                                    $label = $isSupply ? 'Penawaran (Supply)' : 'Permintaan (Demand)';
+
+                                    // Tentukan path gambar dengan pengecekan yang benar
+                                    if ($data->gambar) {
+                                        if (Str::startsWith($data->gambar, ['storage/', 'aset/'])) {
+                                            // Sudah lengkap (langsung bisa diakses lewat asset)
+                                            $gambar = asset($data->gambar);
+                                        } else {
+                                            // Asumsikan file disimpan di dalam storage/app/public
+                                            $gambar = asset('storage/' . $data->gambar);
+                                        }
+                                    } else {
+                                        // Fallback image jika kosong
+                                        $gambar = asset('aset/img/produk/keranjang.png');
+                                    }
+                                @endphp
+
+                                <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+                                    <div class="card product-card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                                        <div class="position-relative">
+                                            <img src="{{ $gambar }}" alt="{{ $data->nama_barang }}"
+                                                class="card-img-top" style="height: 200px; object-fit: cover;"
+                                                onerror="this.src='{{ asset('aset/img/produk/keranjang.png') }}'">
                                         </div>
+
                                         <div class="card-body d-flex flex-column">
-                                            <h5 class="card-title fw-bold text-maroon">{{ $item['nama'] }}</h5>
+                                            <p class="card-title" style="font-size: 14px">
+                                                <span class="{{ $isSupply ? 'text-success' : 'text-primary' }}">
+                                                    {{ $label }}
+                                                </span>
+                                            </p>
+                                            <h5 class="card-title fw-bold text-maroon">{{ $data->nama_barang }}</h5>
+
                                             <p class="card-text text-muted mb-1">
-                                                <i
-                                                    class="fas fa-map-marker-alt me-2 text-maroon"></i>{{ $item['asal'] }}
+                                                <i class="fas fa-map-marker-alt me-2 text-maroon"></i>
+                                                {{ $data->kelurahan?->nama_kelurahan ?? ($data->kecamatan?->nama_kecamatan ?? 'Lokasi tidak diketahui') }}
                                             </p>
-                                            <p class="card-text mb-1"><strong>Jumlah:</strong> {{ $item['jumlah'] }}
+
+                                            <p class="card-text info-row">
+                                                <span class="info-label">Jumlah</span>
+                                                <span class="info-value">
+                                                    : {{ $data->jumlah }}
+                                                    {{ $data->satuanJumlah?->nama_satuan ?? '' }}
+                                                </span>
                                             </p>
-                                            <p class="card-text"><strong>Harga:</strong> {{ $item['harga'] }}</p>
+
+                                            <p class="card-text info-row">
+                                                <span class="info-label">Harga</span>
+                                                <span class="info-value">
+                                                    : Rp {{ number_format($data->harga, 0, ',', '.') }}
+                                                    / {{ $data->satuanHarga?->nama_satuan ?? '' }}
+                                                </span>
+                                            </p>
+
+                                            @if ($isSupply)
+                                                <p class="text-muted mb-2"><i
+                                                        class="fas fa-user me-2 text-maroon"></i>
+                                                    Supplier: {{ $data->nama_supplier ?? '-' }}</p>
+                                            @else
+                                                <p class="text-muted mb-2"><i
+                                                        class="fas fa-users me-2 text-maroon"></i>
+                                                    Pembeli: {{ $data->nama_pembeli ?? '-' }}</p>
+                                            @endif
+
                                             <div class="mt-auto">
                                                 <button class="btn btn-maroon text-white w-100 shadow-sm btn-produk"
-                                                    data-produk='@json($item)'>
+                                                    data-produk='@json($data)'>
                                                     <i class="fas fa-shopping-cart me-2"></i>Pesan Sekarang
                                                 </button>
                                             </div>
@@ -145,6 +230,22 @@
 
     @push('css')
         <style>
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+
+            .info-label {
+                width: 60px;
+                font-weight: bold;
+            }
+
+            .info-value {
+                flex: 1;
+            }
+
             .btn-maroon {
                 background-color: #a83232;
                 border: none;
@@ -217,39 +318,42 @@
             updateClock();
 
             $(document).ready(function() {
+                // Auto-submit saat ganti filter
+                $('#id_kecamatan, #id_kelurahan, #entries').change(function() {
+                    $('#filterForm').submit();
+                });
+
+                // Clear search
+                window.clearSearch = function() {
+                    $('#search').val('');
+                    $('#filterForm').submit();
+                };
+
+                // Load kelurahan via AJAX
                 $('#id_kecamatan').change(function() {
                     const kecamatanId = $(this).val();
                     const $kelurahan = $('#id_kelurahan');
 
-                    if (!kecamatanId) {
-                        $kelurahan.html('<option value="">-- Semua --</option>');
-                        return;
-                    }
+                    $kelurahan.html('<option value="">-- Pilih Kelurahan --</option>');
+
+                    if (!kecamatanId) return;
 
                     $.ajax({
                         url: '{{ route('getKelurahan') }}',
-                        method: 'POST',
+                        method: 'GET',
                         data: {
-                            id_kecamatan: kecamatanId,
-                            _token: '{{ csrf_token() }}'
+                            id_kecamatan: kecamatanId
                         },
                         success: function(data) {
-                            $kelurahan.html('<option value="">-- Semua --</option>');
                             $.each(data, function(i, item) {
+                                const selected = {{ $id_kelurahan ?? 'null' }} == item.id ?
+                                    'selected' : '';
                                 $kelurahan.append(
-                                    `<option value="${item.id}">${item.nama_kelurahan}</option>`
+                                    `<option value="${item.id}" ${selected}>${item.nama_kelurahan}</option>`
                                 );
                             });
-                        },
-                        error: function() {
-                            Swal.fire('Error', 'Gagal memuat kelurahan', 'error');
                         }
                     });
-                });
-
-                // Auto-submit saat entries berubah
-                $('#entries').change(function() {
-                    $('#filterForm').submit();
                 });
             });
 

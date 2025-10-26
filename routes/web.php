@@ -65,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // E-Commerce View
     Route::get('e-commerce/market', [ViewController::class, 'index'])->name('e-commerce.market');
-    Route::post('get-kelurahan', [SupplyController::class, 'getKelurahan'])->name('getKelurahan');
+    Route::get('get-kelurahan', [SupplyController::class, 'getKelurahan'])->name('getKelurahan');
 
     // Supply Barang
     Route::get('e-commerce/market/suply', [SupplyController::class, 'index'])->name('e-commerce.suply');
