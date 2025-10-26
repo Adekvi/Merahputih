@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ECommerce\DemandController;
+use App\Http\Controllers\ECommerce\SupplyController;
 use App\Http\Controllers\ECommerce\ViewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
@@ -63,15 +64,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // E-Commerce View
-    Route::get('e-commerce/view', [ViewController::class, 'index'])->name('e-commerce.view');
+    Route::get('e-commerce/market', [ViewController::class, 'index'])->name('e-commerce.market');
+    Route::post('get-kelurahan', [SupplyController::class, 'getKelurahan'])->name('getKelurahan');
+
+    // Supply Barang
+    Route::get('e-commerce/market/suply', [SupplyController::class, 'index'])->name('e-commerce.suply');
+    Route::get('e-commerce/market/suply/create', [SupplyController::class, 'create'])->name('e-commerce.suply.create');
+    Route::post('e-commerce/market/suply/store', [SupplyController::class, 'store'])->name('e-commerce.suply.store');
+    Route::get('e-commerce/market/suply/edit/{id}', [SupplyController::class, 'edit'])->name('e-commerce.suply.edit');
+    Route::put('e-commerce/market/suply/update/{id}', [SupplyController::class, 'update'])->name('e-commerce.suply.update');
+    Route::delete('e-commerce/market/suply/delete/{id}', [SupplyController::class, 'delete'])->name('e-commerce.suply.delete');
+    Route::post('e-commerce/market/suply/posting/{id}', [SupplyController::class, 'posting'])
+        ->name('e-commerce.suply.posting');
 
     // Demand Barang
-    Route::get('e-commerce/view/data', [DemandController::class, 'index'])->name('e-commerce.view.data');
-    Route::get('e-commerce/view/data/create', [DemandController::class, 'create'])->name('e-commerce.view.create');
-    Route::post('e-commerce/view/data/store', [DemandController::class, 'store'])->name('e-commerce.view.store');
-    Route::post('e-commerce/view/data/edit/{id}', [DemandController::class, 'edit'])->name('e-commerce.view.edit');
-    Route::post('e-commerce/view/data/update/{id}', [DemandController::class, 'update'])->name('e-commerce.view.update');
-    Route::post('e-commerce/view/data/delete/{id}', [DemandController::class, 'delete'])->name('e-commerce.view.delete');
+    Route::get('e-commerce/market/demand', [DemandController::class, 'index'])->name('e-commerce.demand');
+    Route::get('e-commerce/market/demand/create', [DemandController::class, 'create'])->name('e-commerce.demand.create');
+    Route::post('e-commerce/market/demand/store', [DemandController::class, 'store'])->name('e-commerce.demand.store');
+    Route::get('e-commerce/market/demand/edit/{id}', [DemandController::class, 'edit'])->name('e-commerce.demand.edit');
+    Route::put('e-commerce/market/demand/update/{id}', [DemandController::class, 'update'])->name('e-commerce.demand.update');
+    Route::delete('e-commerce/market/demand/delete/{id}', [DemandController::class, 'delete'])->name('e-commerce.demand.delete');
+    Route::post('e-commerce/market/demand/post/{id}', [DemandController::class, 'posting'])
+        ->name('e-commerce.demand.post');
 });
 
 

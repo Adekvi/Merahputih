@@ -5,7 +5,7 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center pt-2 pb-4">
             <div>
                 <h3 class="fw-bold mb-2 text-maroon">🛒 E-Commerce</h3>
-                <p class="text-muted mb-0">Permintaan barang berdasarkan data statistik desa</p>
+                <p class="text-muted mb-0">Permintaan & Penawaran barang</p>
             </div>
             <div class="date-time mt-3 mt-md-0 text-md-end">
                 <div id="tanggal" class="fw-semibold text-muted"></div>
@@ -16,19 +16,40 @@
         <!-- Filter Section -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body bg-light rounded-4">
-                <form method="GET" action="" class="row g-3 align-items-end">
+                <form method="GET" action="{{ route('e-commerce.market') }}" class="row g-3 align-items-end">
                     <div class="col-6 col-md-3">
-                        <label for="kecamatan" class="form-label fw-semibold small">Kecamatan</label>
-                        <select name="kecamatan" id="kecamatan" class="form-select form-select-sm">
+                        <label for="id_kecamatan" class="form-label fw-semibold small">Kecamatan</label>
+                        <select name="id_kecamatan" id="id_kecamatan" class="form-select form-select-sm">
                             <option value="">-- Pilih Kecamatan --</option>
+                            @foreach ($kecamatan as $kec)
+                                <option value="{{ $kec->id }}" {{ $id_kecamatan == $kec->id ? 'selected' : '' }}>
+                                    {{ $kec->nama_kecamatan }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
                     <div class="col-6 col-md-3">
-                        <label for="kelurahan" class="form-label fw-semibold small">Kelurahan</label>
-                        <select name="kelurahan" id="kelurahan" class="form-select form-select-sm">
+                        <label for="id_kelurahan" class="form-label fw-semibold small">Kelurahan</label>
+                        <select name="id_kelurahan" id="id_kelurahan" class="form-select form-select-sm">
                             <option value="">-- Pilih Kelurahan --</option>
+                            @if ($id_kecamatan)
+                                @foreach ($kelurahan as $kel)
+                                    <option value="{{ $kel->id }}"
+                                        {{ $id_kelurahan == $kel->id ? 'selected' : '' }}>
+                                        {{ $kel->nama_kelurahan }}
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
+                    </div>
+                    <div class="col-12 col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+                            <i class="fas fa-filter me-1"></i> Filter
+                        </button>
+                        <a href="{{ route('e-commerce.market') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-sync"></i>
+                        </a>
                     </div>
                 </form>
             </div>
@@ -36,104 +57,86 @@
 
         <!-- Produk -->
         <div class="row g-4">
-            <div class="judul">
-                <h4 class="text-center fw-bold">Produk</h4>
-                <hr>
-                <form action="" method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
-                    <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.2s" style="max-width: 800px;">
+            <div class="card">
+                <div class="card-body">
+                    <div class="judul">
+                        <h4 class="text-center fw-bold">Produk</h4>
+                        <hr>
+                        <form action="{{ route('e-commerce.market') }}" method="POST" enctype="multipart/form-data"
+                            class="row g-3 align-items-end">
+                            <div class="text-center mx-auto wow fadeInUp" data-wow-delay="0.2s"
+                                style="max-width: 800px;">
 
-                        <div class="d-flex justify-content-center align-items-center flex-wrap gap-3 mb-4">
-                            <!-- Dropdown "Tampilkan" -->
-                            <div class="d-flex align-items-center">
-                                <label for="entries" class="form-label fw-semibold small me-2 mb-0">Tampilkan</label>
-                                <select name="entries" id="entries" class="form-select rounded-3"
-                                    style="width: 90px;">
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                            </div>
+                                <div class="d-flex justify-content-center align-items-center flex-wrap gap-3 mb-4">
+                                    <!-- Dropdown "Tampilkan" -->
+                                    <div class="d-flex align-items-center">
+                                        <label for="entries"
+                                            class="form-label fw-semibold small me-2 mb-0">Tampilkan</label>
+                                        <select name="entries" id="entries" class="form-select form-select-sm">
+                                            <option value="10" {{ $entries == 10 ? 'selected' : '' }}>10</option>
+                                            <option value="25" {{ $entries == 25 ? 'selected' : '' }}>25</option>
+                                            <option value="50" {{ $entries == 50 ? 'selected' : '' }}>50</option>
+                                        </select>
+                                    </div>
 
-                            <!-- Input Search -->
-                            <div class="input-group" style="max-width: 350px;">
-                                <input type="text" id="searchInput" class="form-control rounded-start-3"
-                                    placeholder="Cari nama barang..." onkeyup="updateData()">
-                                <button class="btn btn-maroon rounded-end-3 text-white"
-                                    onclick="clearSearch()">Clear</button>
-                            </div>
-                        </div>
-
-                    </div>
-                </form>
-            </div>
-            @php
-                $produk = [
-                    [
-                        'nama' => 'Beras Premium',
-                        'jumlah' => '1.200 kg',
-                        'harga' => 'Rp 13.000/kg',
-                        'asal' => 'Desa Kedumulyo',
-                        'stok' => 'Tersedia',
-                        'supplier' => 'UD Maju Makmur',
-                        'alamat' => 'Jl. Raya Kedumulyo No. 45, Sukolilo',
-                        'lokasi' => 'Kecamatan Sukolilo, Kabupaten Pati',
-                        'kontak' => '6281234567890',
-                        'gambar' => '/aset/img/produk/beras.jpg',
-                    ],
-                    [
-                        'nama' => 'Jagung Pipil',
-                        'jumlah' => '800 kg',
-                        'harga' => 'Rp 7.500/kg',
-                        'asal' => 'Desa Tompe Gunung',
-                        'stok' => 'Tersedia',
-                        'supplier' => 'CV Tani Jaya',
-                        'alamat' => 'Jl. Merdeka No. 88, Tompe Gunung',
-                        'lokasi' => 'Kecamatan Sukolilo, Kabupaten Pati',
-                        'kontak' => '6282287654321',
-                        'gambar' => '/aset/img/produk/jagung-pipil.webp',
-                    ],
-                    [
-                        'nama' => 'Gula Merah',
-                        'jumlah' => '500 kg',
-                        'harga' => 'Rp 15.000/kg',
-                        'asal' => 'Desa Kedungwinong',
-                        'stok' => 'Tersedia',
-                        'supplier' => 'KWT Manis Sejahtera',
-                        'alamat' => 'Jl. Desa Kedungwinong No. 7',
-                        'lokasi' => 'Kecamatan Sukolilo, Kabupaten Pati',
-                        'kontak' => '6285698877665',
-                        'gambar' => '/aset/img/produk/gula-merah.jpg',
-                    ],
-                ];
-            @endphp
-
-            <div class="row g-4">
-                @foreach ($produk as $item)
-                    <div class="col-sm-6 col-md-4 col-lg-3">
-                        <div class="card product-card h-100">
-                            <div class="image-container">
-                                <img src="{{ $item['gambar'] }}" class="card-img-top" alt="{{ $item['nama'] }}">
-                            </div>
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title fw-bold text-maroon">{{ $item['nama'] }}</h5>
-                                <p class="card-text text-muted mb-1">
-                                    <i class="fas fa-map-marker-alt me-2 text-maroon"></i>{{ $item['asal'] }}
-                                </p>
-                                <p class="card-text mb-1"><strong>Jumlah:</strong> {{ $item['jumlah'] }}</p>
-                                <p class="card-text"><strong>Harga:</strong> {{ $item['harga'] }}</p>
-                                <div class="mt-auto">
-                                    <button class="btn btn-maroon text-white w-100 shadow-sm btn-produk"
-                                        data-produk='@json($item)'>
-                                        <i class="fas fa-shopping-cart me-2"></i>Pesan Sekarang
-                                    </button>
+                                    <!-- Input Search -->
+                                    <div class="input-group" style="max-width: 350px;">
+                                        <input type="text" name="search" id="search"
+                                            class="form-control rounded-start-3" placeholder="Nama, jenis, supplier..."
+                                            value="{{ $search }}">
+                                        <button class="btn btn-maroon rounded-end-3 text-white"
+                                            onclick="clearSearch()">Clear</button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
 
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="row g-4">
+                        @if ($market->isEmpty())
+                            <div class="alert alert-info text-center">
+                                <i class="fas fa-info-circle"></i> Tidak ada data barang yang ditemukan.
+                            </div>
+                        @else
+                            <?php
+                            if (!function_exists('rupiah')) {
+                                function Rupiah($angka)
+                                {
+                                    return 'Rp ' . number_format((float) $angka, 0, ',', '.');
+                                }
+                            }
+                            ?>
+                            @foreach ($market as $item)
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="card product-card h-100">
+                                        <div class="image-container">
+                                            <img src="{{ $item['gambar'] }}" class="card-img-top"
+                                                alt="{{ $item['nama'] }}">
+                                        </div>
+                                        <div class="card-body d-flex flex-column">
+                                            <h5 class="card-title fw-bold text-maroon">{{ $item['nama'] }}</h5>
+                                            <p class="card-text text-muted mb-1">
+                                                <i
+                                                    class="fas fa-map-marker-alt me-2 text-maroon"></i>{{ $item['asal'] }}
+                                            </p>
+                                            <p class="card-text mb-1"><strong>Jumlah:</strong> {{ $item['jumlah'] }}
+                                            </p>
+                                            <p class="card-text"><strong>Harga:</strong> {{ $item['harga'] }}</p>
+                                            <div class="mt-auto">
+                                                <button class="btn btn-maroon text-white w-100 shadow-sm btn-produk"
+                                                    data-produk='@json($item)'>
+                                                    <i class="fas fa-shopping-cart me-2"></i>Pesan Sekarang
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="d-flex justify-content-center mt-3 mb-3">
@@ -194,6 +197,9 @@
     @endpush
 
     @push('js')
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- Select2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             function updateClock() {
@@ -209,6 +215,43 @@
             }
             setInterval(updateClock, 1000);
             updateClock();
+
+            $(document).ready(function() {
+                $('#id_kecamatan').change(function() {
+                    const kecamatanId = $(this).val();
+                    const $kelurahan = $('#id_kelurahan');
+
+                    if (!kecamatanId) {
+                        $kelurahan.html('<option value="">-- Semua --</option>');
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '{{ route('getKelurahan') }}',
+                        method: 'POST',
+                        data: {
+                            id_kecamatan: kecamatanId,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(data) {
+                            $kelurahan.html('<option value="">-- Semua --</option>');
+                            $.each(data, function(i, item) {
+                                $kelurahan.append(
+                                    `<option value="${item.id}">${item.nama_kelurahan}</option>`
+                                );
+                            });
+                        },
+                        error: function() {
+                            Swal.fire('Error', 'Gagal memuat kelurahan', 'error');
+                        }
+                    });
+                });
+
+                // Auto-submit saat entries berubah
+                $('#entries').change(function() {
+                    $('#filterForm').submit();
+                });
+            });
 
             document.querySelectorAll('.btn-produk').forEach(btn => {
                 btn.addEventListener('click', function() {

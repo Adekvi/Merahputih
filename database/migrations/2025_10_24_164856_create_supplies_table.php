@@ -15,8 +15,19 @@ return new class extends Migration
             $table->id();
             $table->foreignId('id_kecamatan')->constrained('kecamatans')->onDelete('cascade');
             $table->foreignId('id_kelurahan')->nullable()->constrained('kelurahans')->onDelete('cascade');
-            $table->string('supply_name')->nullable();
-            $table->integer('quantity')->nullable();
+            $table->string('nama_supplier')->nullable();
+            $table->string('nama_barang')->nullable();
+            $table->string('kategori')->nullable();
+            $table->date('tgl_sup')->nullable();
+            $table->integer('jumlah')->nullable();
+            $table->foreignId('satuan_jumlah_id')->constrained('satuans');
+            $table->decimal('harga', 15, 2)->nullable();
+            $table->foreignId('satuan_harga_id')->constrained('satuans');
+            $table->string('alamat')->nullable();
+            $table->string('no_hp')->nullable();
+            $table->text('gambar')->nullable();
+            $table->text('deskripsi')->nullable();
+            $table->string('status')->nullable();
             $table->timestamps();
         });
     }

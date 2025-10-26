@@ -25,20 +25,10 @@
         <div class="sidebar-content">
             <ul class="nav nav-secondary">
                 <li class="nav-item active">
-                    <a data-bs-toggle="collapse" href="#dashboard" class="collapsed" aria-expanded="false">
+                    <a href="{{ route('dashboard') }}" class="collapsed" aria-expanded="false">
                         <i class="fas fa-home"></i>
                         <p>Dashboard</p>
-                        {{-- <span class="caret"></span> --}}
                     </a>
-                    {{-- <div class="collapse" id="dashboard">
-                        <ul class="nav nav-collapse">
-                            <li>
-                                <a href="#">
-                                    <span class="sub-item">Dashboard 1</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div> --}}
                 </li>
                 <li class="nav-section">
                     <span class="sidebar-mini-icon">
@@ -70,12 +60,36 @@
                         <p>Profile</p>
                     </a>
                 </li>
-                <li class="nav-item {{ Request::is('e-commerce/view*') ? 'active' : '' }}">
-                    <a href="{{ url('e-commerce/view') }}">
+                <li class="nav-item {{ Request::is('e-commerce/market*') ? 'active' : '' }}">
+                    <a data-bs-toggle="collapse" href="#ecomerce"
+                        class="{{ Request::is('e-commerce/market*') ? '' : 'collapsed' }}"
+                        aria-expanded="{{ Request::is('e-commerce/market*') ? 'true' : 'false' }}">
                         <i class="fas fa-shopping-cart"></i>
                         <p>E-Commerce</p>
+                        <span class="caret"></span>
                     </a>
+
+                    <div class="collapse {{ Request::is('e-commerce/market*') ? 'show' : '' }}" id="ecomerce">
+                        <ul class="nav nav-collapse">
+                            <li class="{{ Request::is('e-commerce/market') ? 'active' : '' }}">
+                                <a href="{{ url('e-commerce/market') }}">
+                                    <span class="sub-item">Market</span>
+                                </a>
+                            </li>
+                            <li class="{{ Request::is('e-commerce/market/suply*') ? 'active' : '' }}">
+                                <a href="{{ url('e-commerce/market/suply') }}">
+                                    <span class="sub-item">Supply</span>
+                                </a>
+                            </li>
+                            <li class="{{ Request::is('e-commerce/market/demand*') ? 'active' : '' }}">
+                                <a href="{{ url('e-commerce/market/demand') }}">
+                                    <span class="sub-item">Demand</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
+
                 {{-- <li class="nav-item">
                     <a data-bs-toggle="collapse" href="#submenu">
                         <i class="fas fa-bars"></i>

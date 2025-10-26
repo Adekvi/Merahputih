@@ -1,11 +1,11 @@
-<x-layout.terminal title="Demand">
+<x-layout.terminal title="Supply">
 
     <div class="page-inner ecommerce-page">
         <!-- Header -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center pt-2 pb-4">
             <div>
                 <h3 class="fw-bold mb-2 text-maroon">🛒 E-Commerce</h3>
-                <p class="text-muted mb-0">Permintaan Barang</p>
+                <p class="text-muted mb-0">Penawaran Barang</p>
             </div>
             <div class="date-time mt-3 mt-md-0 text-md-end">
                 <div id="tanggal" class="fw-semibold text-muted"></div>
@@ -23,10 +23,10 @@
 
                     <div class="card border-0 shadow-sm mb-3">
                         <div class="card-body bg-light rounded-4">
-                            <form method="GET" action="{{ route('e-commerce.demand') }}"
+                            <form method="GET" action="{{ route('e-commerce.suply') }}"
                                 class="row gy-2 gx-3 align-items-end" id="filterForm">
                                 <div class="col-md-2">
-                                    <a href="{{ route('e-commerce.demand.create') }}" class="btn btn-primary rounded-3"
+                                    <a href="{{ route('e-commerce.suply.create') }}" class="btn btn-primary rounded-3"
                                         data-bs-toggle="tooltip" data-bs-placement="top" title="Tambah Data">
                                         <i class="fa fa-cart-plus" aria-hidden="true"></i> Tambah</i>
                                     </a>
@@ -65,7 +65,7 @@
                                     <button type="submit" class="btn btn-primary btn-sm flex-fill">
                                         <i class="fas fa-filter me-1"></i> Filter
                                     </button>
-                                    <a href="{{ route('e-commerce.demand') }}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{ route('e-commerce.suply') }}" class="btn btn-outline-secondary btn-sm">
                                         <i class="fas fa-sync"></i>
                                     </a>
                                 </div>
@@ -75,7 +75,7 @@
 
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body bg-light rounded-4">
-                            <form action="{{ route('e-commerce.demand') }}" method="GET"
+                            <form action="{{ route('e-commerce.suply') }}" method="GET"
                                 class="row gy-2 gx-3 align-items-end">
                                 <div class="col-6 col-md-2">
                                     <label for="entries" class="form-label fw-semibold small mb-1">Tampil</label>
@@ -102,7 +102,7 @@
 
                     <hr class="w-100 mx-auto">
 
-                    @if ($demand->isEmpty())
+                    @if ($suply->isEmpty())
                         <div class="alert alert-info text-center">
                             <i class="fas fa-info-circle"></i> Tidak ada data barang yang ditemukan.
                         </div>
@@ -117,70 +117,57 @@
                             }
                             ?>
                             <div class="row g-3 g-md-4">
-                                @foreach ($demand as $item)
+                                @foreach ($suply as $item)
                                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                                        <div class="card demand-card h-100 shadow-sm hover-shadow">
+                                        <div class="card product-card h-100 shadow-sm hover-shadow">
                                             <div class="image-container position-relative">
                                                 <img src="{{ $item->gambar ? asset($item->gambar) : asset('aset/img/produk/jagung.jpg') }}"
                                                     class="card-img-top object-fit-cover w-100"
                                                     alt="{{ $item->nama_barang }}">
                                                 <span
                                                     class="badge position-absolute top-0 end-0 m-2 {{ $item->jumlah > 0 ? 'bg-success' : 'bg-danger' }}">
-                                                    {{ $item->jumlah > 0 ? 'Aktif' : 'Tidak Aktif' }}
+                                                    {{ $item->jumlah > 0 ? 'Tersedia' : 'Habis' }}
                                                 </span>
                                             </div>
 
                                             <div class="card-body d-flex flex-column p-3">
-                                                <h6 class="fw-bold text-dark mb-1 text-truncate"
+                                                <h6 class="fw-bold text-maroon mb-1 text-truncate"
                                                     title="{{ $item->nama_barang }}">
                                                     {{ Str::limit($item->nama_barang, 35) }}
                                                 </h6>
 
                                                 <p class="text-muted small mb-1">
-                                                    <i class="fas fa-user text-maroon me-1"></i>
-                                                    {{ $item->nama_peminta ?? 'Pasar Umum' }}
+                                                    <i class="fas fa-map-marker-alt text-maroon me-1"></i>
+                                                    {{ $item->kelurahan->nama_kelurahan ?? 'Unknown' }}
                                                 </p>
 
                                                 <p class="text-muted small mb-2">
-                                                    <i class="fas fa-map-marker-alt text-maroon me-1"></i>
-                                                    {{ $item->kelurahan->nama_kelurahan ?? 'Lokasi tidak diketahui' }}
+                                                    <i class="fas fa-store me-1"></i>
+                                                    {{ $item->nama_supplier ?? 'Unknown Supplier' }}
                                                 </p>
 
                                                 <div
                                                     class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                                                    @if ($item->status == 'posting')
-                                                        <span class="text-success fw-bold">{{ $item->jumlah ?? '-' }}
-                                                            {{ $item->satuanJumlah->nama_satuan ?? '-' }}</span>
-                                                        <span class="text-primary fw-bold">Rp
-                                                            {{ number_format($item->harga ?? '-', 0, ',', '.') }}
-                                                            \{{ $item->satuanHarga->nama_satuan ?? '-' }}
-                                                        </span>
-                                                    @else
-                                                        <span class="text-success fw-bold">{{ $item->jumlah ?? '-' }}
-                                                            {{ $item->satuanJumlah->nama_satuan ?? '-' }}</span>
-                                                        <span class="text-primary fw-bold">Rp
-                                                            {{ number_format($item->harga ?? '-', 0, ',', '.') }}
-                                                            \{{ $item->satuanHarga->nama_satuan ?? '-' }}
-                                                        </span>
-                                                    @endif
+                                                    <span class="text-success fw-bold">{{ $item->jumlah }}
+                                                        {{ $item->satuanJumlah->nama_satuan ?? '-' }}</span>
+                                                    <span class="text-primary fw-bold">{{ Rupiah($item->harga) }}
+                                                        /{{ $item->satuanHarga->nama_satuan ?? '-' }}</span>
                                                 </div>
 
                                                 <div class="mt-auto d-flex flex-wrap gap-2">
-                                                    @if ($item->status == 'posting')
+                                                    @if ($item->status == 'ditawarkan')
                                                         <button
                                                             class="btn btn-success text-white flex-fill btn-sm shadow-sm d-flex align-items-center justify-content-center"
                                                             disabled>
                                                             <i class="fas fa-check-circle me-1"></i>
-                                                            <span>Posting</span>
+                                                            <span>Ditawarkan</span>
                                                         </button>
                                                     @else
                                                         <button
-                                                            class="btn btn-maroon text-white flex-fill btn-sm shadow-sm btn-penuhi d-flex align-items-center justify-content-center"
-                                                            data-id="{{ $item->id }}"
-                                                            data-produk='@json($item)'
-                                                            data-satuan='@json($satuans)'>
+                                                            class="btn btn-maroon text-white flex-fill btn-sm shadow-sm btn-tawarkan d-flex align-items-center justify-content-center"
+                                                            data-id="{{ $item->id }}">
                                                             <i class="fas fa-bullhorn me-1"></i>
-                                                            <span>Request Barang</span>
+                                                            <span>Tawarkan</span>
                                                         </button>
                                                     @endif
 
@@ -200,7 +187,7 @@
 
                         <!-- Paginasi -->
                         <div class="d-flex justify-content-center mt-5">
-                            {{ $demand->appends(request()->query())->links('pagination::bootstrap-5') }}
+                            {{ $suply->appends(request()->query())->links('pagination::bootstrap-5') }}
                         </div>
                     @endif
                 </div>
@@ -211,7 +198,7 @@
 
     @push('css')
         <style>
-            .demand-card {
+            .product-card {
                 transition: all 0.3s ease;
                 border-radius: 12px;
                 overflow: hidden;
@@ -221,9 +208,13 @@
                 border: solid 0.2px #ededed;
             }
 
-            .demand-card:hover {
+            .product-card:hover {
                 transform: translateY(-5px);
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+            }
+
+            .hover-shadow {
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             }
 
             .image-container {
@@ -239,7 +230,7 @@
                 transition: transform 0.4s ease;
             }
 
-            .demand-card:hover .image-container img {
+            .product-card:hover .image-container img {
                 transform: scale(1.08);
             }
 
@@ -272,7 +263,7 @@
                 color: #fff;
             }
 
-            /* Efek tombol dipenuhi */
+            /* Efek animasi tombol saat berhasil ditawarkan */
             @keyframes pulse {
                 0% {
                     transform: scale(1);
@@ -294,6 +285,7 @@
                 animation: pulse 1s ease-in-out;
             }
 
+            /* Responsivitas teks dan tombol */
             @media (max-width: 576px) {
                 .card-body h6 {
                     font-size: 0.9rem;
@@ -373,133 +365,39 @@
                 });
             });
 
+            // posting barang
             document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('.btn-penuhi').forEach(btn => {
+                document.querySelectorAll('.btn-tawarkan').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const id = this.dataset.id;
                         const button = this;
 
-                        const data = JSON.parse(this.dataset.produk);
-                        const satuans = JSON.parse(this.dataset.satuan);
-
                         Swal.fire({
-                            title: 'Edit Permintaan Barang',
-                            html: `
-                                <div class="text-start">
-                                    <div class="row g-3">
-
-                                        <!-- Nama Barang (read‑only, tapi tetap dikirim) -->
-                                        <div class="col-md-12">
-                                            <label class="form-label fw-semibold">Nama Barang</label>
-                                            <input id="nama_barang" type="text" class="form-control"
-                                                value="${data.nama_barang ?? '-'}" readonly>
-                                        </div>
-
-                                        <!-- Jumlah + Satuan Jumlah -->
-                                        <div class="col-md-12">
-                                            <label class="form-label fw-semibold">Jumlah</label>
-                                            <div class="d-flex gap-2">
-                                                <input id="jumlah" type="number" class="form-control"
-                                                    value="${data.jumlah ?? 0}" min="1">
-                                                <select id="satuan_jumlah_id" class="form-select" style="max-width:150px;">
-                                                    ${satuans.map(opt => 
-                                                        `<option value="${opt.id}" ${opt.id == data.satuan_jumlah_id ? 'selected' : ''}>${opt.nama_satuan}</option>`
-                                                    ).join('')}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <!-- Harga per Satuan + Satuan Harga -->
-                                        <div class="col-md-12">
-                                            <label class="form-label fw-semibold">Harga per Satuan</label>
-                                            <div class="d-flex gap-2">
-                                                <div class="input-group" style="max-width:300px;">
-                                                    <span class="input-group-text">Rp</span>
-                                                    <input id="harga" type="number" class="form-control"
-                                                        value="${Number(data.harga).toLocaleString('id-ID')}" min="0">
-                                                </div>
-                                                <select id="satuan_harga_id" class="form-select" style="max-width:150px;">
-                                                    ${satuans.map(opt => 
-                                                        `<option value="${opt.id}" ${opt.id == data.satuan_harga_id ? 'selected' : ''}>${opt.nama_satuan}</option>`
-                                                    ).join('')}
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            `,
+                            title: 'Tawarkan Barang?',
+                            text: 'Barang ini akan muncul di Market dan siap dipesan.',
+                            icon: 'question',
                             showCancelButton: true,
-                            confirmButtonText: 'Simpan &amp; Posting',
+                            confirmButtonText: 'Ya, tawarkan!',
                             cancelButtonText: 'Batal',
                             confirmButtonColor: '#800000',
-                            focusConfirm: false,
-                            preConfirm: () => {
-                                const nama_barang = document.getElementById('nama_barang')
-                                    .value.trim();
-                                const jumlah = document.getElementById('jumlah').value;
-                                const satuan_jumlah_id = document.getElementById(
-                                    'satuan_jumlah_id').value;
-                                const harga = document.getElementById('harga').value;
-                                const satuan_harga_id = document.getElementById(
-                                    'satuan_harga_id').value;
-
-                                if (!jumlah || !harga) {
-                                    Swal.showValidationMessage(
-                                        'Jumlah dan harga wajib diisi!');
-                                    return false;
-                                }
-                                if (!nama_barang) {
-                                    Swal.showValidationMessage('Nama barang wajib diisi!');
-                                    return false;
-                                }
-
-                                return {
-                                    nama_barang,
-                                    stok: jumlah, // sesuai nama di controller
-                                    satuan_jumlah_id,
-                                    satuan_harga_id,
-                                    harga
-                                };
-                            }
-                        }).then(result => {
+                        }).then((result) => {
                             if (result.isConfirmed) {
-                                const {
-                                    nama_barang,
-                                    stok,
-                                    satuan_jumlah_id,
-                                    satuan_harga_id,
-                                    harga
-                                } = result.value;
-
-                                // Kirim data yang **EXACTLY** sama dengan validasi controller
-                                fetch(`{{ route('e-commerce.demand.post', ['id' => ':id']) }}`
+                                fetch(`{{ route('e-commerce.suply.posting', ['id' => ':id']) }}`
                                         .replace(':id', id), {
                                             method: 'POST',
                                             headers: {
                                                 'X-CSRF-TOKEN': document.querySelector(
                                                     'meta[name="csrf-token"]').content,
-                                                'Content-Type': 'application/json',
-                                                'Accept': 'application/json'
-                                            },
-                                            body: JSON.stringify({
-                                                nama_barang,
-                                                stok, // <-- sesuai request->stok
-                                                satuan_jumlah_id, // <-- tambahkan kedua satuan
-                                                satuan_harga_id,
-                                                harga
-                                            })
+                                                'Content-Type': 'application/json'
+                                            }
                                         })
-                                    .then(res => {
-                                        if (!res.ok) throw new Error(
-                                            'Network response was not ok');
-                                        return res.json();
-                                    })
+
+                                    .then(res => res.json())
                                     .then(data => {
                                         if (data.success) {
-                                            // Update UI tombol
+                                            // Ubah tampilan tombol
                                             button.innerHTML =
-                                                '<i class="fas fa-check-circle me-1"></i> Dipenuhi';
+                                                '<i class="fas fa-check-circle me-1"></i> Ditawarkan';
                                             button.classList.remove('btn-maroon');
                                             button.classList.add('btn-success',
                                                 'pulse-animation');
@@ -512,20 +410,17 @@
                                                 timer: 1500,
                                                 showConfirmButton: false
                                             });
-                                        } else {
-                                            Swal.fire('Gagal', data.message ||
-                                                'Terjadi kesalahan.', 'error');
                                         }
                                     })
                                     .catch(err => {
-                                        console.error(err);
-                                        Swal.fire('Error', 'Gagal memproses permintaan.',
+                                        Swal.fire('Error', 'Gagal menawarkan barang.',
                                             'error');
                                     });
                             }
                         });
                     });
                 });
+
                 document.querySelectorAll('.btn-detail').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const data = JSON.parse(this.dataset.produk);
@@ -534,20 +429,21 @@
                             html: `
                                 <div class="text-start">
                                     <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
-                                        <img src="${data.gambar ? '/' + data.gambar : '/aset/img/produk/jagung.jpg'}"
-                                            alt="${data.nama_barang}" 
+                                        <img src="${data.gambar ? '/storage/' + data.gambar : '/aset/img/produk/jagung.jpg'}" alt="${data.nama_barang}" 
                                             style="width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                                     </div>
+
                                     <div style="background:#fff8f8; border-radius:12px; padding:14px 18px; box-shadow:inset 0 0 6px rgba(168,50,50,0.1); font-size:14px;">
-                                        <h5 class="fw-bold mb-2 text-maroon">Detail Permintaan</h5>
+                                        <h5 class="fw-bold mb-2 text-maroon">Detail Produk</h4>
                                         <hr>
                                         <table style="width:100%; border-collapse:collapse;">
                                             <tbody>
-                                                <tr><td style="font-weight:600; color:#a83232; width:110px;">Harga Maks</td><td style="width:15px; text-align:center;">:</td><td style="color:#333;">Rp ${Number(data.harga ?? '-').toLocaleString('id-ID')} /${data.satuan_harga?.nama_satuan ?? '-'}</td></tr>
-                                                <tr><td style="font-weight:600; color:#a83232;">Kebutuhan</td><td style="text-align:center;">:</td><td style="color:#333;">${data.jumlah} ${data.satuan_jumlah?.nama_satuan}</td></tr>
-                                                <tr><td style="font-weight:600; color:#a83232;">Peminta</td><td style="text-align:center;">:</td><td style="color:#333;">${data.nama_peminta ?? '-'}</td></tr>
-                                                <tr><td style="font-weight:600; color:#a83232;">Lokasi</td><td style="text-align:center;">:</td><td style="color:#333;">${data.kelurahan?.nama_kelurahan ?? '-'}</td></tr>
-                                                <tr><td style="font-weight:600; color:#a83232;">Kontak</td><td style="text-align:center;">:</td><td style="color:#333;">${data.no_hp ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232; width:110px;">Harga</td><td style="width:15px; text-align:center;">:</td><td style="color:#333;">Rp ${Number(data.harga).toLocaleString('id-ID')}, ${data.satuan_harga?.nama_satuan ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232;">Stok</td><td style="text-align:center;">:</td><td style="color:#333;">${data.jumlah} ${data.satuan_jumlah?.nama_satuan ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232;">Desa</td><td style="text-align:center;">:</td><td style="color:#333;">${data.kelurahan?.nama_kelurahan ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232;">Supplier</td><td style="text-align:center;">:</td><td style="color:#333;">${data.nama_supplier ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232;">Alamat</td><td style="text-align:center;">:</td><td style="color:#333;">${data.kecamatan?.nama_kecamatan ?? '-'}</td></tr>
+                                                <tr><td style="font-weight:600; color:#a83232;">No. Hp</td><td style="text-align:center;">:</td><td style="color:#333;">${data.no_hp ?? '-'}</td></tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -557,6 +453,7 @@
                         });
                     });
                 });
+
             });
         </script>
     @endpush
