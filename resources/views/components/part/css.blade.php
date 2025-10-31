@@ -14,7 +14,7 @@
                 "Font Awesome 5 Brands",
                 "simple-line-icons",
             ],
-            urls: ["aset/css/fonts.min.css"],
+            urls: ["{{ asset('aset/css/fonts.min.css') }}"],
         },
         active: function() {
             sessionStorage.fonts = true;

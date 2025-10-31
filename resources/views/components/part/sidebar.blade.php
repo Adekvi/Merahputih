@@ -30,6 +30,12 @@
                         <p>Dashboard</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{{ url('/menu') }}" class="collapsed" aria-expanded="false">
+                        <i class="fa-solid fa-bars"></i>
+                        <p>Menu</p>
+                    </a>
+                </li>
                 <li class="nav-section">
                     <span class="sidebar-mini-icon">
                         <i class="fa fa-ellipsis-h"></i>

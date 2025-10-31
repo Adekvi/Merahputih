@@ -269,5 +269,6 @@ class SurveyController extends Controller
         ];
 
         return view('dashboard', compact('DATA'));
+        // return view('menu');
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ECommerce\DemandController;
 use App\Http\Controllers\ECommerce\SupplyController;
 use App\Http\Controllers\ECommerce\ViewController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SurveyController;
@@ -25,6 +26,8 @@ Route::get('/', function () {
 */
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [SurveyController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
 
     /*
     |--------------------------------------------------------------------------

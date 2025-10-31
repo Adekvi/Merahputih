@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ECommerce;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ecommerce\Product;
+use App\Models\ECommerce\Satuan;
 use App\Models\ECommerce\Supply;
 use App\Models\User;
 use App\Models\Wilayah\Kecamatan;
@@ -62,7 +63,13 @@ class SupplyController extends Controller
                 ->get();
         }
 
-        // dd($suply);
+        // modal supply
+        $kecamatans = Kecamatan::all();
+        $kelurahans = Kelurahan::all();
+
+        $satuan = Satuan::all();
+
+        // dd($kecamatans);
 
         return view('e-commerce.supply.index', compact(
             'suply',
@@ -71,14 +78,26 @@ class SupplyController extends Controller
             'kecamatan',
             'kelurahan',
             'id_kecamatan',
-            'id_kelurahan'
+            'id_kelurahan',
+            'kecamatans',
+            'kelurahans',
+            'satuan'
         ));
     }
 
     public function getKelurahan(Request $request)
     {
-        $kecamatanId = $request->input('id_kecamatan');
-        $kelurahans = Kelurahan::where('id_kecamatan', $kecamatanId)->get();
+        $kecamatanId = $request->query('id_kecamatan'); // gunakan query(), bukan input()
+
+        if (!$kecamatanId) {
+            return response()->json([], 400);
+        }
+
+        $kelurahans = Kelurahan::where('id_kecamatan', $kecamatanId)
+                            ->select('id', 'nama_kelurahan')
+                            ->orderBy('nama_kelurahan')
+                            ->get();
+
         return response()->json($kelurahans);
     }
 

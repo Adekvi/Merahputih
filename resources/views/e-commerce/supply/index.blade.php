@@ -26,10 +26,10 @@
                             <form method="GET" action="{{ route('e-commerce.suply') }}"
                                 class="row gy-2 gx-3 align-items-end" id="filterForm">
                                 <div class="col-md-2">
-                                    <a href="{{ route('e-commerce.suply.create') }}" class="btn btn-primary rounded-3"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Tambah Data">
+                                    <button type="button" class="btn btn-primary rounded-3" data-bs-toggle="modal"
+                                        data-bs-target="#supply">
                                         <i class="fa fa-cart-plus" aria-hidden="true"></i> Tambah</i>
-                                    </a>
+                                    </button>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <label for="id_kecamatan"
@@ -193,6 +193,8 @@
                 </div>
             </div>
         </div>
+
+        @include('e-commerce.supply.create')s
 
     </div>
 

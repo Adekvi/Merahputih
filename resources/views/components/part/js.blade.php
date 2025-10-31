@@ -3,6 +3,8 @@
 <script src="{{ asset('aset/js/core/popper.min.js') }}"></script>
 <script src="{{ asset('aset/js/core/bootstrap.min.js') }}"></script>
 
+{{-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> --}}
+
 <!-- jQuery Scrollbar -->
 <script src="{{ asset('aset/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js') }}"></script>
 
@@ -34,8 +36,6 @@
 <!-- Kaiadmin DEMO methods, don't include it in your project! -->
 <script src="{{ asset('aset/js/setting-demo.js') }}"></script>
 <script src="{{ asset('aset/js/demo.js') }}"></script>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
