@@ -366,21 +366,53 @@
                         html: `
                             <div class="text-start">
                                 <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
-                                    <img src="${data.gambar}" alt="${data.nama}" 
+                                    <img src="${data.gambar}" alt="${data.nama_barang}" 
                                         style="width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                                 </div>
 
                                 <div style="background:#fff8f8; border-radius:12px; padding:14px 18px; box-shadow:inset 0 0 6px rgba(168,50,50,0.1); font-size:14px;">
-                                    <h5 class="fw-bold mb-2 text-maroon">Detail Produk</h4>
+                                    <h5 class="fw-bold mb-2 text-maroon">Detail Produk</h5>
                                     <hr>
                                     <table style="width:100%; border-collapse:collapse;">
                                         <tbody>
-                                            <tr><td style="font-weight:600; color:#a83232; width:110px;">Harga</td><td style="width:15px; text-align:center;">:</td><td style="color:#333;">${data.harga}</td></tr>
-                                            <tr><td style="font-weight:600; color:#a83232;">Stok</td><td style="text-align:center;">:</td><td style="color:#333;">${data.stok}</td></tr>
-                                            <tr><td style="font-weight:600; color:#a83232;">Asal</td><td style="text-align:center;">:</td><td style="color:#333;">${data.asal}</td></tr>
-                                            <tr><td style="font-weight:600; color:#a83232;">Supplier</td><td style="text-align:center;">:</td><td style="color:#333;">${data.supplier}</td></tr>
-                                            <tr><td style="font-weight:600; color:#a83232;">Alamat</td><td style="text-align:center;">:</td><td style="color:#333;">${data.alamat}</td></tr>
-                                            <tr><td style="font-weight:600; color:#a83232;">Lokasi</td><td style="text-align:center;">:</td><td style="color:#333;">${data.lokasi}</td></tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232; width:110px;">Harga</td>
+                                                <td style="width:15px; text-align:center;">:</td>
+                                                <td style="color:#333;">
+                                                    ${Number(data.harga).toLocaleString('id-ID')} / ${data.satuan_harga?.nama_satuan ?? '-'}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232;">Jumlah</td>
+                                                <td style="text-align:center;">:</td>
+                                                <td style="color:#333;">
+                                                    ${data.jumlah} ${data.satuan_jumlah?.nama_satuan ?? '-'}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232;">Asal</td>
+                                                <td style="text-align:center;">:</td>
+                                                <td style="color:#333;">${data.asal ?? '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232;">
+                                                    ${data.type === 'supply' ? 'Supplier' : 'Peminta'}
+                                                </td>
+                                                <td style="text-align:center;">:</td>
+                                                <td style="color:#333;">
+                                                    ${data.type === 'supply' ? (data.nama_supplier ?? '-') : (data.nama_peminta ?? '-')}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232;">Alamat</td>
+                                                <td style="text-align:center;">:</td>
+                                                <td style="color:#333;">${data.alamat ?? '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="font-weight:600; color:#a83232;">Lokasi</td>
+                                                <td style="text-align:center;">:</td>
+                                                <td style="color:#333;">${data.lokasi ?? '-'}</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
