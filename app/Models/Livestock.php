@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Livestock extends Model
 {
-       use HasFactory;
+    use HasFactory;
 
     protected $table = 'livestocks';
 
@@ -18,8 +18,13 @@ class Livestock extends Model
         'produksi',
     ];
 
+    protected $casts = [
+        'parcel_id' => 'integer',
+        'jumlah' => 'integer',
+    ];
+
     public function parcel()
     {
-        return $this->belongsTo(Parcel::class, 'parcel_id');
+        return $this->belongsTo(Parcel::class, 'parcel_id', 'id');
     }
 }

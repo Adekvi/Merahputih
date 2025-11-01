@@ -23,10 +23,11 @@ class ParcelCrop extends Model
     protected $casts = [
         'luas_hektare' => 'float',
         'produksi_ton' => 'float',
+        'parcel_id' => 'integer',
     ];
 
     public function parcel()
     {
-        return $this->belongsTo(Parcel::class, 'parcel_id');
+        return $this->belongsTo(Parcel::class, 'parcel_id', 'id');
     }
 }

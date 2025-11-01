@@ -121,12 +121,12 @@
                                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                                         <div class="card demand-card h-100 shadow-sm hover-shadow">
                                             <div class="image-container position-relative">
-                                                <img src="{{ $item->gambar ? asset($item->gambar) : asset('aset/img/produk/jagung.jpg') }}"
+                                                <img src="{{ $item->gambar ? Storage::url($item->gambar) : asset('aset/img/produk/jagung.jpg') }}"
                                                     class="card-img-top object-fit-cover w-100"
                                                     alt="{{ $item->nama_barang }}">
                                                 <span
                                                     class="badge position-absolute top-0 end-0 m-2 {{ $item->jumlah > 0 ? 'bg-success' : 'bg-danger' }}">
-                                                    {{ $item->jumlah > 0 ? 'Aktif' : 'Tidak Aktif' }}
+                                                    {{ $item->jumlah > 0 ? 'Belum Terpenuhi' : 'Terpenuhi' }}
                                                 </span>
                                             </div>
 
@@ -138,7 +138,7 @@
 
                                                 <p class="text-muted small mb-1">
                                                     <i class="fas fa-user text-maroon me-1"></i>
-                                                    {{ $item->nama_peminta ?? 'Pasar Umum' }}
+                                                    {{ $item->nama_demand ?? 'Pasar Umum' }}
                                                 </p>
 
                                                 <p class="text-muted small mb-2">
@@ -533,9 +533,11 @@
                             title: data.nama_barang,
                             html: `
                                 <div class="text-start">
-                                    <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
-                                        <img src="${data.gambar ? '/' + data.gambar : '/aset/img/produk/jagung.jpg'}"
+                                   <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
+                                        <img 
+                                            src="${data.gambar ? '/storage/' + data.gambar : '/aset/img/produk/jagung.jpg'}"
                                             alt="${data.nama_barang}" 
+                                            onerror="this.src='/aset/img/produk/jagung.jpg';"
                                             style="width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                                     </div>
                                     <div style="background:#fff8f8; border-radius:12px; padding:14px 18px; box-shadow:inset 0 0 6px rgba(168,50,50,0.1); font-size:14px;">

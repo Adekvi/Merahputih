@@ -22,12 +22,16 @@ class DemandController extends Controller
         $id_kecamatan = $request->input('id_kecamatan');
         $id_kelurahan = $request->input('id_kelurahan');
 
+        $user = Auth::user();
+
         // Ambil semua kecamatan
         $kecamatan = Kecamatan::orderBy('nama_kecamatan')->get();
         $satuans = Satuan::all();
 
         // Query Demand
-        $query = Demand::with([ 'satuanJumlah', 'satuanHarga', 'kecamatan', 'kelurahan'])->orderBy('id', 'desc');
+        $query = Demand::with([ 'satuanJumlah', 'satuanHarga', 'kecamatan', 'kelurahan'])
+            ->where('user_id', $user->id)
+            ->orderBy('id', 'desc');
 
         // Filter berdasarkan kecamatan
         if ($id_kecamatan) {
@@ -141,19 +145,21 @@ class DemandController extends Controller
         $kecamatan = Kecamatan::all();
         $kelurahan = Kelurahan::all();
 
-        return view('e-commerce.demand.create', compact('user', 'kecamatan', 'kelurahan'));
+        $satuan = Satuan::all();
+
+        return view('e-commerce.demand.create', compact('user', 'kecamatan', 'kelurahan', 'satuan'));
     }
 
     public function store(Request $request)
     {
-
+        // dd($request->all());
         $request->validate([
             'id_kecamatan' => 'exists:kecamatans,id',
             'id_kelurahan' => 'nullable|exists:kelurahans,id',
-            'nama_supplier' => 'string|max:255',
+            'nama_demand' => 'string|max:255',
             'nama_barang' => 'string|max:255',
             'kategori' => 'string|max:255',
-            'tgl_sup' => 'date',
+            'tgl_dem' => 'date',
             'jumlah' => 'integer|min:1',
             'satuan_jumlah_id' => 'nullable|exists:satuans,id',
             'harga' => 'numeric|min:0',
@@ -163,6 +169,8 @@ class DemandController extends Controller
             'gambar' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'deskripsi' => 'nullable|string',
         ]);
+        
+        $userId = Auth::user()->id;
 
         $gambar = null;
 
@@ -172,17 +180,17 @@ class DemandController extends Controller
         }
 
         $data = [
+            'user_id' => $userId,
             'id_kecamatan' => $request->input('id_kecamatan'),
             'id_kelurahan' => $request->input('id_kelurahan'),
-            'nama_supplier' => $request->input('nama_supplier'),
+            'nama_demand' => $request->input('nama_demand'),
             'nama_barang' => $request->input('nama_barang'),
             'kategori' => $request->input('kategori'),
-            'tgl_sup' => $request->input('tgl_sup'),
+            'tgl_dem' => $request->input('tgl_dem'),
             'jumlah' => $request->input('jumlah'),
             'satuan_jumlah_id' => $request->input('satuan_jumlah_id'),
             'harga' => $request->input('harga'),
             'satuan_harga_id' => $request->input('satuan_harga_id'),
-            'satuan' => $request->input('satuan'),
             'no_hp' => $request->input('no_hp'),
             'alamat' => $request->input('alamat'),
             'gambar' => $gambar,
@@ -208,10 +216,10 @@ class DemandController extends Controller
         $request->validate([
             'id_kecamatan' => 'exists:kecamatans,id',
             'id_kelurahan' => 'nullable|exists:kelurahans,id',
-            'nama_supplier' => 'string|max:255',
+            'nama_demand' => 'string|max:255',
             'nama_barang' => 'string|max:255',
             'kategori' => 'string|max:255',
-            'tgl_sup' => 'date',
+            'tgl_dem' => 'date',
             'jumlah' => 'integer|min:1',
             'satuan_jumlah_id' => 'nullable|exists:satuans,id',
             'harga' => 'numeric|min:0',
@@ -238,15 +246,14 @@ class DemandController extends Controller
         $data = [
             'id_kecamatan' => $request->input('id_kecamatan'),
             'id_kelurahan' => $request->input('id_kelurahan'),
-            'nama_supplier' => $request->input('nama_supplier'),
+            'nama_demand' => $request->input('nama_demand'),
             'nama_barang' => $request->input('nama_barang'),
             'kategori' => $request->input('kategori'),
-            'tgl_sup' => $request->input('tgl_sup'),
+            'tgl_dem' => $request->input('tgl_dem'),
             'jumlah' => $request->input('jumlah'),
             'satuan_jumlah_id' => $request->input('satuan_jumlah_id'),
             'harga' => $request->input('harga'),
             'satuan_harga_id' => $request->input('satuan_harga_id'),
-            'satuan' => $request->input('satuan'),
             'no_hp' => $request->input('no_hp'),
             'alamat' => $request->input('alamat'),
             'gambar' => $gambar,

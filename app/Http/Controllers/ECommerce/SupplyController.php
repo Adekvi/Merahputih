@@ -22,11 +22,15 @@ class SupplyController extends Controller
         $id_kecamatan = $request->input('id_kecamatan');
         $id_kelurahan = $request->input('id_kelurahan');
 
+        $user = Auth::user();
+
         // Ambil semua kecamatan
         $kecamatan = Kecamatan::orderBy('nama_kecamatan')->get();
 
         // Query supply
-        $query = Supply::with(['satuanJumlah', 'satuanHarga', 'kecamatan', 'kelurahan'])->orderBy('id', 'desc');
+        $query = Supply::with(['satuanJumlah', 'satuanHarga', 'kecamatan', 'kelurahan'])
+            ->where('user_id', $user->id)
+            ->orderBy('id', 'desc');
 
         // Filter berdasarkan kecamatan
         if ($id_kecamatan) {
@@ -87,17 +91,8 @@ class SupplyController extends Controller
 
     public function getKelurahan(Request $request)
     {
-        $kecamatanId = $request->query('id_kecamatan'); // gunakan query(), bukan input()
-
-        if (!$kecamatanId) {
-            return response()->json([], 400);
-        }
-
-        $kelurahans = Kelurahan::where('id_kecamatan', $kecamatanId)
-                            ->select('id', 'nama_kelurahan')
-                            ->orderBy('nama_kelurahan')
-                            ->get();
-
+        $kecamatanId = $request->input('id_kecamatan');
+        $kelurahans = Kelurahan::where('id_kecamatan', $kecamatanId)->get();
         return response()->json($kelurahans);
     }
 
@@ -142,12 +137,16 @@ class SupplyController extends Controller
         $kecamatan = Kecamatan::all();
         $kelurahan = Kelurahan::all();
 
-        return view('e-commerce.supply.create', compact('user', 'kecamatan', 'kelurahan'));
+        $satuan = Satuan::all();
+
+        // dd($satuan);
+
+        return view('e-commerce.supply.create', compact('user', 'kecamatan', 'kelurahan', 'satuan'));
     }
 
     public function store(Request $request)
     {
-
+        // dd($request->all());
         $request->validate([
             'id_kecamatan' => 'exists:kecamatans,id',
             'id_kelurahan' => 'nullable|exists:kelurahans,id',
@@ -165,6 +164,8 @@ class SupplyController extends Controller
             'deskripsi' => 'nullable|string',
         ]);
 
+        $userId = Auth::user()->id;
+
         $gambar = null;
 
         if ($request->hasFile('gambar')) {
@@ -173,6 +174,7 @@ class SupplyController extends Controller
         }
 
         $data = [
+            'user_id' => $userId,
             'id_kecamatan' => $request->input('id_kecamatan'),
             'id_kelurahan' => $request->input('id_kelurahan'),
             'nama_supplier' => $request->input('nama_supplier'),
@@ -183,16 +185,16 @@ class SupplyController extends Controller
             'satuan_jumlah_id' => $request->input('satuan_jumlah_id'),
             'harga' => $request->input('harga'),
             'satuan_harga_id' => $request->input('satuan_harga_id'),
-            'satuan' => $request->input('satuan'),
             'no_hp' => $request->input('no_hp'),
             'alamat' => $request->input('alamat'),
+            'deskripsi' => $request->input('deskripsi'),
             'gambar' => $gambar,
             'status' => 'suply',
         ];
 
         Supply::create($data);
 
-        return redirect()->route('e-commerce.supply')->with('success', 'Supply created successfully.');
+        return redirect()->route('e-commerce.suply')->with('success', 'Supply created successfully.');
     }
 
     public function edit($id)
@@ -201,12 +203,13 @@ class SupplyController extends Controller
         $kecamatan = Kecamatan::all();
         $kelurahan = Kelurahan::all();
 
-        return view('e-commerce.supply.edit', compact('supply', 'kecamatan', 'kelurahan'));
+        return view('e-commerce.suply.edit', compact('supply', 'kecamatan', 'kelurahan'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
+            'user_id' => 'exists:users,id',
             'id_kecamatan' => 'exists:kecamatans,id',
             'id_kelurahan' => 'nullable|exists:kelurahans,id',
             'nama_supplier' => 'string|max:255',
@@ -247,16 +250,16 @@ class SupplyController extends Controller
             'satuan_jumlah_id' => $request->input('satuan_jumlah_id'),
             'harga' => $request->input('harga'),
             'satuan_harga_id' => $request->input('satuan_harga_id'),
-            'satuan' => $request->input('satuan'),
             'no_hp' => $request->input('no_hp'),
             'alamat' => $request->input('alamat'),
+            'deskripsi' => $request->input('deskripsi'),
             'gambar' => $gambar,
             'status' => 'posting',
         ];
 
         $supply->update($data);
 
-        return redirect()->route('e-commerce.supply')->with('success', 'Supply updated successfully.');
+        return redirect()->route('e-commerce.suply')->with('success', 'Supply updated successfully.');
     }
 
     public function delete($id)
@@ -264,6 +267,6 @@ class SupplyController extends Controller
         $supply = Supply::findOrFail($id);
         $supply->delete();
 
-        return redirect()->route('e-commerce.supply')->with('success', 'Supply deleted successfully.');
+        return redirect()->route('e-commerce.suply')->with('success', 'Supply deleted successfully.');
     }
 }

@@ -60,12 +60,12 @@
                         <p>Voice</p>
                     </a>
                 </li>
-                <li class="nav-item {{ Request::is('profile.edit') ? 'active' : '' }}">
+                {{-- <li class="nav-item {{ Request::is('profile.edit') ? 'active' : '' }}">
                     <a href="{{ route('profile.edit') }}">
                         <i class="fas fa-user"></i>
                         <p>Profile</p>
                     </a>
-                </li>
+                </li> --}}
                 <li class="nav-item {{ Request::is('e-commerce/market*') ? 'active' : '' }}">
                     <a data-bs-toggle="collapse" href="#ecomerce"
                         class="{{ Request::is('e-commerce/market*') ? '' : 'collapsed' }}"

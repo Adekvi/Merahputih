@@ -211,7 +211,13 @@
                                             <div class="mt-auto">
                                                 <button class="btn btn-maroon text-white w-100 shadow-sm btn-produk"
                                                     data-produk='@json($data)'>
-                                                    <i class="fas fa-shopping-cart me-2"></i>Pesan Sekarang
+                                                    <i class="fas fa-shopping-cart me-2"></i>Detail Barang
+                                                </button>
+                                            </div>
+                                            <div class="mt-2">
+                                                <button class="btn btn-outline-maroon w-100 shadow-sm btn-barter"
+                                                    data-produk='@json($data)'>
+                                                    <i class="fas fa-exchange-alt me-2"></i>Barter Sekarang
                                                 </button>
                                             </div>
                                         </div>
@@ -225,6 +231,69 @@
         </div>
 
         <div class="d-flex justify-content-center mt-3 mb-3">
+        </div>
+    </div>
+
+    {{-- Modal --}}
+    <div class="modal fade" id="barterModal" tabindex="-1" aria-labelledby="barterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 shadow-lg">
+                <div class="modal-header bg-maroon text-white rounded-top-4">
+                    <h5 class="modal-title text-dark" id="barterModalLabel">
+                        <i class="fas fa-exchange-alt me-2"></i>Barter Barang
+                    </h5>
+                    <button type="button" class="btn-close btn-close-dark" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="selectedProduct" class="mb-3 border rounded-3 p-3 bg-light">
+                        <h6 class="fw-bold text-maroon mb-2">Barang yang Dipilih:</h6>
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <img id="barterImg" src="" class="img-fluid rounded-3 shadow-sm"
+                                    style="height: 150px; object-fit: cover;">
+                            </div>
+                            <div class="col-md-8">
+                                <p class="mb-1"><strong>Nama:</strong> <span id="barterNama"></span></p>
+                                <p class="mb-1"><strong>Jumlah:</strong> <span id="barterJumlah"></span></p>
+                                <p class="mb-1"><strong>Harga:</strong> <span id="barterHarga"></span></p>
+                                {{-- <p class="mb-1"><strong>Kecamatan:</strong> <span id="barterKecamatan"></span></p>
+                                <p class="mb-1"><strong>Kelurahan:</strong> <span id="barterKelurahan"></span></p> --}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <h6 class="fw-bold text-maroon mb-3">Pilih Barang Penukar Anda:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle" id="barangPenukarTable">
+                            <thead class="table-maroon text-white">
+                                <tr>
+                                    <th scope="col">Pilih</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Jumlah</th>
+                                    <th scope="col">Harga</th>
+                                    <th scope="col">Alamat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-maroon text-white rounded-3" id="konfirmasiBarter">
+                        <i class="fas fa-check-circle me-1"></i>Konfirmasi Barter
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -357,19 +426,30 @@
                 });
             });
 
+            // Detail
             document.querySelectorAll('.btn-produk').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const data = JSON.parse(this.dataset.produk);
 
+                    // Debugging
+                    console.log('Data produk:', data);
+
+                    // Gunakan data.gambar jika ada, kalau tidak gunakan fallback
+                    const gambarSrc = data.gambar && data.gambar.trim() !== '' ?
+                        data.gambar :
+                        getFallbackImage(data.nama_barang);
+
                     Swal.fire({
-                        title: data.nama,
+                        title: data.nama_barang || 'Produk Tidak Dikenal',
                         html: `
                             <div class="text-start">
                                 <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
-                                    <img src="${data.gambar}" alt="${data.nama_barang}" 
+                                    <img 
+                                        src="${data.gambar ? '/storage/' + data.gambar : '/aset/img/produk/jagung.jpg'}"
+                                        alt="${data.nama_barang}" 
+                                        onerror="this.src='/aset/img/produk/jagung.jpg';"
                                         style="width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                                 </div>
-
                                 <div style="background:#fff8f8; border-radius:12px; padding:14px 18px; box-shadow:inset 0 0 6px rgba(168,50,50,0.1); font-size:14px;">
                                     <h5 class="fw-bold mb-2 text-maroon">Detail Produk</h5>
                                     <hr>
@@ -379,20 +459,15 @@
                                                 <td style="font-weight:600; color:#a83232; width:110px;">Harga</td>
                                                 <td style="width:15px; text-align:center;">:</td>
                                                 <td style="color:#333;">
-                                                    ${Number(data.harga).toLocaleString('id-ID')} / ${data.satuan_harga?.nama_satuan ?? '-'}
+                                                    ${Number(data.harga || 0).toLocaleString('id-ID')} / ${data.satuan_harga?.nama_satuan ?? '-'}
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td style="font-weight:600; color:#a83232;">Jumlah</td>
                                                 <td style="text-align:center;">:</td>
                                                 <td style="color:#333;">
-                                                    ${data.jumlah} ${data.satuan_jumlah?.nama_satuan ?? '-'}
+                                                    ${data.jumlah || 0} ${data.satuan_jumlah?.nama_satuan ?? '-'}
                                                 </td>
-                                            </tr>
-                                            <tr>
-                                                <td style="font-weight:600; color:#a83232;">Asal</td>
-                                                <td style="text-align:center;">:</td>
-                                                <td style="color:#333;">${data.asal ?? '-'}</td>
                                             </tr>
                                             <tr>
                                                 <td style="font-weight:600; color:#a83232;">
@@ -411,7 +486,7 @@
                                             <tr>
                                                 <td style="font-weight:600; color:#a83232;">Lokasi</td>
                                                 <td style="text-align:center;">:</td>
-                                                <td style="color:#333;">${data.lokasi ?? '-'}</td>
+                                                <td style="color:#333;">${data.kecamatanId ?? '-'}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -419,12 +494,12 @@
                             </div>
                         `,
                         showCancelButton: true,
+                        showConfirmButton: true,
                         confirmButtonText: 'Chat Supplier',
                         cancelButtonText: 'Tutup',
                         confirmButtonColor: '#a83232',
                         cancelButtonColor: '#6c757d',
                         background: '#fff',
-                        color: '#333',
                         width: '500px',
                         customClass: {
                             popup: 'rounded-4 shadow-lg border border-light',
@@ -450,61 +525,27 @@
                             }).then(res => {
                                 if (res.isConfirmed) {
                                     const email = res.value;
-                                    const userId = btoa(email);
 
                                     Swal.fire({
-                                        title: `Chat dengan ${data.supplier}`,
+                                        title: `Chat dengan ${data.supplier || data.nama_supplier || 'Supplier'}`,
                                         html: `
                                             <style>
                                                 .chat-bubble {
-                                                    max-width: 75%;
-                                                    border-radius: 10px;
-                                                    padding: 10px 14px 16px 12px;
-                                                    margin-bottom: 8px;
-                                                    display: inline-block;
-                                                    animation: fadeIn 0.2s ease-in;
-                                                    position: relative;
-                                                    line-height: 1.4;
+                                                    max-width: 75%; border-radius: 10px; padding: 10px 14px 16px 12px;
+                                                    margin-bottom: 8px; display: inline-block; animation: fadeIn 0.2s ease-in;
+                                                    position: relative; line-height: 1.4;
                                                 }
                                                 .chat-bubble .time {
-                                                    font-size: 9px;
-                                                    color: #333;
-                                                    position: absolute;
-                                                    bottom: 4px; /* jarak dari bawah */
-                                                    right: 10px; /* jarak dari kanan */
+                                                    font-size: 9px; color: #333; position: absolute; bottom: 4px; right: 10px;
                                                 }
-                                                .chat-user {
-                                                    background: #f2f2f2;
-                                                    color: #333;
-                                                    align-self: flex-end;
-                                                    text-align: right;
-                                                }
-                                                .chat-supplier {
-                                                    background: #f2f2f2;
-                                                    color: #333;
-                                                    align-self: flex-start;
-                                                    text-align: left;
-                                                }
-                                                .chat-message {
-                                                    display: flex;
-                                                    flex-direction: column;
-                                                    margin-bottom: 10px;
-                                                }
+                                                .chat-user { background: #f2f2f2; color: #333; text-align: right; align-self: flex-end; }
+                                                .chat-supplier { background: #f2f2f2; color: #333; text-align: left; align-self: flex-start; }
+                                                .chat-message { display: flex; flex-direction: column; margin-bottom: 10px; }
                                                 #chat-box {
-                                                    height: 250px;
-                                                    overflow-y: auto;
-                                                    border: 1px solid #ddd;
-                                                    border-radius: 8px;
-                                                    padding: 10px;
-                                                    background: #fffefc;
-                                                    margin-bottom: 10px;
-                                                    display: flex;
-                                                    flex-direction: column;
+                                                    height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;
+                                                    padding: 10px; background: #fffefc; margin-bottom: 10px; display: flex; flex-direction: column;
                                                 }
-                                                @keyframes fadeIn {
-                                                    from { opacity: 0; transform: translateY(4px); }
-                                                    to { opacity: 1; transform: translateY(0); }
-                                                }
+                                                @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
                                             </style>
                                             <div id="chat-box">
                                                 <div class="text-muted text-center" style="font-size:12px; margin-bottom:10px;">
@@ -533,73 +574,171 @@
                                             const sendBtn = document.getElementById(
                                                 'chat-send');
 
-                                            const formatTime = () => {
-                                                const now = new Date();
-                                                return now.toLocaleTimeString(
-                                                    'id-ID', {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        hour12: false
-                                                    });
+                                            const formatTime = () => new Date()
+                                                .toLocaleTimeString('id-ID', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false
+                                                });
+
+                                            const sendMessage = () => {
+                                                const msg = input.value.trim();
+                                                if (!msg) return;
+
+                                                const userMsg = document
+                                                    .createElement('div');
+                                                userMsg.className =
+                                                    'chat-message';
+                                                userMsg.innerHTML =
+                                                    `<div class="chat-bubble chat-user">${msg}<span class="time">${formatTime()}</span></div>`;
+                                                chatBox.appendChild(userMsg);
+                                                input.value = '';
+                                                chatBox.scrollTop = chatBox
+                                                    .scrollHeight;
+
+                                                setTimeout(() => {
+                                                    const reply =
+                                                        document
+                                                        .createElement(
+                                                            'div');
+                                                    reply.className =
+                                                        'chat-message';
+                                                    reply.innerHTML =
+                                                        `<div class="chat-bubble chat-supplier">Terima kasih ${email.split('@')[0]}, produk ${data.nama_barang || 'ini'} masih tersedia!<span class="time">${formatTime()}</span></div>`;
+                                                    chatBox.appendChild(
+                                                        reply);
+                                                    chatBox.scrollTop =
+                                                        chatBox
+                                                        .scrollHeight;
+                                                }, 1000);
                                             };
 
                                             sendBtn.addEventListener('click',
-                                                () => {
-                                                    const msg = input.value
-                                                        .trim();
-                                                    if (!msg) return;
-
-                                                    const userMsg = document
-                                                        .createElement('div');
-                                                    userMsg.className =
-                                                        'chat-message';
-                                                    userMsg.innerHTML = `
-                                                        <div class="chat-bubble chat-user">
-                                                            ${msg}
-                                                            <span class="time">${formatTime()}</span>
-                                                        </div>
-                                                    `;
-                                                    chatBox.appendChild(
-                                                        userMsg);
-                                                    input.value = '';
-                                                    chatBox.scrollTop = chatBox
-                                                        .scrollHeight;
-
-                                                    setTimeout(() => {
-                                                        const reply =
-                                                            document
-                                                            .createElement(
-                                                                'div');
-                                                        reply
-                                                            .className =
-                                                            'chat-message';
-                                                        reply
-                                                            .innerHTML = `
-                                                            <div class="chat-bubble chat-supplier">
-                                                                Terima kasih ${email.split('@')[0]}, produk ${data.nama} masih tersedia!
-                                                                <span class="time">${formatTime()}</span>
-                                                            </div>
-                                                        `;
-                                                        chatBox
-                                                            .appendChild(
-                                                                reply);
-                                                        chatBox
-                                                            .scrollTop =
-                                                            chatBox
-                                                            .scrollHeight;
-                                                    }, 1200);
+                                                sendMessage);
+                                            input.addEventListener('keypress',
+                                                e => {
+                                                    if (e.key === 'Enter')
+                                                        sendMessage();
                                                 });
-
-                                            input.addEventListener('keypress', (
-                                                e) => {
-                                                if (e.key === 'Enter')
-                                                    sendBtn.click();
-                                            });
                                         }
                                     });
                                 }
                             });
                         }
+                    });
+                });
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const barterButtons = document.querySelectorAll('.btn-barter');
+                const modalElement = document.getElementById('barterModal');
+                const modal = new bootstrap.Modal(modalElement);
+                const defaultImg = "{{ asset('aset/img/produk/keranjang.png') }}";
+
+                barterButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const produk = JSON.parse(this.dataset.produk);
+
+                        // Isi data produk ke modal
+                        const imgElement = document.getElementById('barterImg');
+                        imgElement.src = produk.gambar ?
+                            (produk.gambar.startsWith('http') ? produk.gambar :
+                                `/storage/${produk.gambar}`) :
+                            defaultImg;
+
+                        document.getElementById('barterNama').textContent = produk.nama_barang;
+                        document.getElementById('barterJumlah').textContent =
+                            `${produk.jumlah} ${produk.satuan_jumlah?.nama_satuan ?? ''}`;
+                        document.getElementById('barterHarga').textContent =
+                            `Rp ${Number(produk.harga).toLocaleString('id-ID')}`;
+                        // document.getElementById('barterKecamatan').textContent =
+                        //     `${produk.kecamatan?.nama_kecamatan ?? ''}`;
+                        // document.getElementById('barterKelurahan').textContent =
+                        //     `${produk.kelurahan?.nama_kelurahan ?? ''}`;
+
+                        // Tentukan tipe barter
+                        const type = produk.supply_id ? 'suply' : 'demand';
+                        const tbody = document.querySelector('#barangPenukarTable tbody');
+                        tbody.innerHTML =
+                            `<tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>`;
+
+                        // Ambil data barang penukar dari server
+                        fetch(`/barter/options?type=${type}`)
+                            .then(res => res.json())
+                            .then(barangList => {
+                                const tbody = document.querySelector('#barangPenukarTable tbody');
+                                tbody.innerHTML = '';
+
+                                barangList.forEach(item => {
+                                    const gambarSrc = item.gambar ?
+                                        `/storage/ecomerce/${item.gambar}` :
+                                        '/aset/img/produk/jagung.jpg';
+
+                                    const row = document.createElement('tr');
+                                    row.innerHTML = `
+                                        <td><input type="radio" name="barangPenukar" value="${item.id}"></td>
+                                        <td>${item.nama_barang}</td>
+                                        <td>${item.jumlah}</td>
+                                        <td>Rp ${Number(item.harga).toLocaleString('id-ID')}</td>
+                                        <td>${item.nama_kecamatan ?? '-'} - ${item.nama_kelurahan ?? '-'}</td>
+                                        <td>${item.pemilik}</td>
+                                    `;
+                                    tbody.appendChild(row);
+                                });
+                            })
+                            .catch(err => {
+                                console.error('Gagal memuat data barter:', err);
+                                tbody.innerHTML = `<tr>
+                                    <td colspan="5" class="text-center text-danger">
+                                        Terjadi kesalahan saat memuat data barang Anda.
+                                    </td>
+                                </tr>`;
+                            });
+
+                        // Simpan produk di tombol konfirmasi
+                        const btnKonfirmasi = document.getElementById('konfirmasiBarter');
+                        btnKonfirmasi.dataset.produk = JSON.stringify(produk);
+
+                        modal.show();
+                    });
+                });
+
+                // Saat klik konfirmasi barter
+                document.getElementById('konfirmasiBarter').addEventListener('click', function() {
+                    const produk = JSON.parse(this.dataset.produk);
+                    const selectedRadio = document.querySelector(
+                        'input[name="barangPenukar"]:checked'); // sesuaikan name input
+
+                    if (!selectedRadio) {
+                        // Jika belum memilih barang, tampilkan SweetAlert2
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Oops...',
+                            text: 'Silakan pilih barang penukar Anda terlebih dahulu!',
+                            confirmButtonColor: '#d33',
+                        });
+                        return;
+                    }
+
+                    const barangPenukarId = selectedRadio.value;
+
+                    // Contoh: tampilkan under construction saat sudah memilih barang
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Under Construction',
+                        text: `Permintaan barter untuk "${produk.nama_barang}" sedang dalam tahap pengembangan.`,
+                        confirmButtonColor: '#3085d6',
+                    });
+
+                    // Jika ingin modal ditutup setelah klik konfirmasi
+                    const modalElement = document.getElementById('barterModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+
+                    // Log data (sementara)
+                    console.log('Barter dikirim (simulasi):', {
+                        produk_dipilih: produk,
+                        barang_penukar_id: barangPenukarId,
                     });
                 });
             });

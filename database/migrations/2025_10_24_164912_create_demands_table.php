@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('demands', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('id_kecamatan')->constrained('kecamatans')->onDelete('cascade');
             $table->foreignId('id_kelurahan')->nullable()->constrained('kelurahans')->onDelete('cascade');
+            $table->string('nama_demand')->nullable();
             $table->string('nama_barang')->nullable();
             $table->string('kategori')->nullable();
             $table->date('tgl_dem')->nullable();

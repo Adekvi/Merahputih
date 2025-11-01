@@ -6,6 +6,8 @@ use App\Models\Survey;
 use App\Models\Parcel;
 use App\Models\ParcelCrop;
 use App\Models\Livestock;
+use App\Models\Wilayah\Kecamatan;
+use App\Models\Wilayah\Kelurahan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -41,159 +43,139 @@ class SurveyController extends Controller
 
     public function createvoice()
     {
-        return view('surveys.create_voice');
+        $kecamatans = Kecamatan::orderBy('nama_kecamatan')->get();
+        return view('surveys.create_voice', compact('kecamatans'));
     }
+
 
     public function store(Request $request)
     {
-        // Ambil semua input awal
         $input = $request->all();
 
-        // Jika parcels tidak dikirim sebagai array tapi parcels_json ada -> decode
         if ((empty($input['parcels']) || !is_array($input['parcels'])) && !empty($input['parcels_json'])) {
             $decoded = json_decode($input['parcels_json'], true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 $input['parcels'] = $decoded;
             } else {
-                // jika json invalid, kembali dengan error
-                return redirect()->back()
-                    ->withErrors(['parcels_json' => 'Format JSON potensi lahan tidak valid.'])
-                    ->withInput();
+                return redirect()->back()->withErrors(['parcels_json' => 'Format JSON potensi lahan tidak valid.'])->withInput();
             }
         }
 
-        // Validasi (gunakan $input)
+        // VALIDATION
         $rules = [
-            'kecamatan' => 'required|string|max:150',
-            'desa' => 'required|string|max:150',
+            'kecamatan_id' => 'nullable|exists:kecamatans,id',
+            'kelurahan_id' => 'nullable|exists:kelurahans,id',
             'jumlah_penduduk' => 'nullable|integer|min:0',
 
             'parcels' => 'required|array|min:1',
             'parcels.*.type' => 'required|in:persawahan,perkebunan,tambak,peternakan,komoditas_lain',
-
-            // crops optional
             'parcels.*.crops' => 'nullable|array',
             'parcels.*.crops.*.nama_tanaman' => 'required_with:parcels.*.crops|string|max:200',
             'parcels.*.crops.*.luas_hektare' => 'nullable|numeric|min:0',
             'parcels.*.crops.*.produksi_ton' => 'nullable|numeric|min:0',
             'parcels.*.crops.*.satuan' => 'nullable|string|max:20',
-            'parcels.*.crops.*.catatan' => 'nullable|string',
-
-            // livestock optional
             'parcels.*.livestocks' => 'nullable|array',
             'parcels.*.livestocks.*.jenis_ternak' => 'required_with:parcels.*.livestocks|string|max:150',
-            'parcels.*.livestocks.*.jumlah' => 'nullable|integer|min:0',
-            'parcels.*.livestocks.*.produksi' => 'nullable|string',
         ];
 
-        $messages = [
-            'parcels.required' => 'Minimal satu potensi lahan harus ditambahkan.',
-            'parcels.*.type.in' => 'Tipe lahan tidak valid.',
-        ];
-
-        $validator = Validator::make($input, $rules, $messages);
-
+        $validator = Validator::make($input, $rules);
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         DB::beginTransaction();
-
         try {
-            // --- Buat survey awal dengan no_id sementara ---
+            // Jika front-end mengirim nama kec/desa (suatu fallback saat voice) -> coba resolve ke id
+            if (empty($input['kecamatan_id']) && !empty($input['kecamatan'])) {
+                $kecModel = Kecamatan::firstOrCreate(['nama' => $input['kecamatan']]);
+                $input['kecamatan_id'] = $kecModel->id;
+            }
+            if (empty($input['kelurahan_id']) && !empty($input['desa'])) {
+                // Jika kelurahan perlu dihubungkan ke kecamatan, sertakan kecamatan_id yang sudah ada
+                $kelAttrs = ['nama' => $input['desa']];
+                if (!empty($input['kecamatan_id'])) $kelAttrs['kecamatan_id'] = $input['kecamatan_id'];
+                $kelModel = Kelurahan::firstOrCreate($kelAttrs);
+                $input['kelurahan_id'] = $kelModel->id;
+            }
+
             $tempNoId = 'TMP-' . (string) Str::uuid();
 
             $survey = Survey::create([
                 'no_id' => $tempNoId,
-                'kecamatan' => $input['kecamatan'],
-                'desa' => $input['desa'],
+                'kecamatan_id' => $input['kecamatan_id'] ?? null,
+                'kelurahan_id' => $input['kelurahan_id'] ?? null,
                 'jumlah_penduduk' => $input['jumlah_penduduk'] ?? null,
-                'user_id' => Auth::id(), // simpan user yang membuat survey (null jika tidak login)
+                'user_id' => Auth::id(),
             ]);
 
-            // --- Generate no_id final ---
-            $kecamatanRaw = $input['kecamatan'] ?? 'KEC';
-            $desaRaw = $input['desa'] ?? 'DES';
+            // generate final no_id berdasarkan id dan kode kec/kel (ambil nama jika tersedia)
+            $kecName = $survey->kecamatan?->nama ?? ($input['kecamatan'] ?? 'KEC');
+            $kelName = $survey->kelurahan?->nama ?? ($input['desa'] ?? 'DES');
 
-            $kecCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $kecamatanRaw));
+            $kecCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $kecName));
             $kecCode = substr($kecCode, 0, 3) ?: 'KEC';
 
-            $desaCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $desaRaw));
-            $desaCode = substr($desaCode, 0, 3) ?: 'DES';
+            $kelCode = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $kelName));
+            $kelCode = substr($kelCode, 0, 3) ?: 'DES';
 
             $date = Carbon::now()->format('Ymd');
             $seq = sprintf('%04d', $survey->id);
-            $generatedNoId = "KEC{$kecCode}-DES{$desaCode}-{$date}-{$seq}";
+            $generatedNoId = "KEC{$kecCode}-DES{$kelCode}-{$date}-{$seq}";
 
             $survey->no_id = $generatedNoId;
             $survey->save();
 
-            // --- Simpan parcels + crops + livestocks (pakai $input['parcels']) ---
+            // Save parcels
             $parcels = $input['parcels'] ?? [];
             foreach ($parcels as $parcelData) {
-                // pastikan tipe ada
                 if (empty($parcelData['type'])) continue;
-
                 $parcel = Parcel::create([
                     'survey_id' => $survey->id,
                     'type' => $parcelData['type'],
                 ]);
 
-                // crops
                 if (!empty($parcelData['crops']) && is_array($parcelData['crops'])) {
                     foreach ($parcelData['crops'] as $crop) {
-                        if (!empty($crop['nama_tanaman'])) {
-                            ParcelCrop::create([
-                                'parcel_id' => $parcel->id,
-                                'nama_tanaman' => $crop['nama_tanaman'],
-                                'luas_hektare' => $crop['luas_hektare'] ?? null,
-                                'produksi_ton' => $crop['produksi_ton'] ?? null,
-                                'satuan' => $crop['satuan'] ?? null,
-                                'catatan' => $crop['catatan'] ?? null,
-                            ]);
-                        }
+                        if (empty($crop['nama_tanaman'])) continue;
+                        ParcelCrop::create([
+                            'parcel_id' => $parcel->id,
+                            'nama_tanaman' => $crop['nama_tanaman'],
+                            'luas_hektare' => $crop['luas_hektare'] ?? null,
+                            'produksi_ton' => $crop['produksi_ton'] ?? null,
+                            'satuan' => $crop['satuan'] ?? null,
+                            'catatan' => $crop['catatan'] ?? null,
+                        ]);
                     }
                 }
 
-                // livestocks
                 if (!empty($parcelData['livestocks']) && is_array($parcelData['livestocks'])) {
                     foreach ($parcelData['livestocks'] as $l) {
-                        if (!empty($l['jenis_ternak'])) {
-                            Livestock::create([
-                                'parcel_id' => $parcel->id,
-                                'jenis_ternak' => $l['jenis_ternak'],
-                                'jumlah' => $l['jumlah'] ?? null,
-                                'produksi' => $l['produksi'] ?? null,
-                            ]);
-                        }
+                        if (empty($l['jenis_ternak'])) continue;
+                        Livestock::create([
+                            'parcel_id' => $parcel->id,
+                            'jenis_ternak' => $l['jenis_ternak'],
+                            'jumlah' => $l['jumlah'] ?? null,
+                            'produksi' => $l['produksi'] ?? null,
+                        ]);
                     }
                 }
             }
 
             DB::commit();
 
-            // Pesan sukses
             $successMsg = 'Data sensus berhasil disimpan. ID: ' . $survey->no_id;
 
-            // Jika request berasal dari voice modal, kembali ke halaman voice supaya UI voice tetap tampil dan menampilkan log
-            if (!empty($input['parcels_json']) || $request->has('parcels_json') || $request->has('_from_voice')) {
-                // sertakan latest_no_id supaya JS di blade bisa menampilkannya di flash box
-                return redirect()->route('surveys.voicecreate')
-                    ->with('success', $successMsg)
-                    ->with('latest_no_id', $survey->no_id);
+            if (!empty($input['parcels_json']) || $request->has('_from_voice')) {
+                return redirect()->route('surveys.voicecreate')->with('success', $successMsg)->with('latest_no_id', $survey->no_id);
             }
 
-            // Default: redirect ke index (sertakan latest_no_id)
-            return redirect()->route('surveys.index')
-                ->with('success', $successMsg)
-                ->with('latest_no_id', $survey->no_id);
+            return redirect()->route('surveys.index')->with('success', $successMsg)->with('latest_no_id', $survey->no_id);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withInput()->withErrors(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
         }
     }
+
 
     public function dashboard()
     {
@@ -269,6 +251,22 @@ class SurveyController extends Controller
         ];
 
         return view('dashboard', compact('DATA'));
-        // return view('menu');
+    }
+    public function kelurahansByKecamatan($kecamatanId)
+    {
+        // gunakan kolom id_kecamatan dan kembalikan field id + nama_kelurahan sebagai 'nama'
+        $kel = Kelurahan::where('id_kecamatan', $kecamatanId)
+            ->orderBy('nama_kelurahan')
+            ->get(['id', 'nama_kelurahan']);
+
+        // normalisasi response agar frontend dapat baca field "nama"
+        $kel = $kel->map(function ($k) {
+            return [
+                'id' => $k->id,
+                'nama' => $k->nama_kelurahan,
+            ];
+        });
+
+        return response()->json($kel);
     }
 }

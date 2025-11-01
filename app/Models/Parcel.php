@@ -9,8 +9,6 @@ class Parcel extends Model
 {
     use HasFactory;
 
-    protected $table = 'parcels';
-
     protected $fillable = [
         'survey_id',
         'type',
@@ -20,20 +18,21 @@ class Parcel extends Model
 
     protected $casts = [
         'area_hectare' => 'float',
+        'survey_id' => 'integer',
     ];
 
     public function survey()
     {
-        return $this->belongsTo(Survey::class, 'survey_id');
+        return $this->belongsTo(Survey::class, 'survey_id', 'id');
     }
 
     public function crops()
     {
-        return $this->hasMany(ParcelCrop::class, 'parcel_id');
+        return $this->hasMany(ParcelCrop::class, 'parcel_id', 'id');
     }
 
     public function livestock()
     {
-        return $this->hasMany(Livestock::class, 'parcel_id');
+        return $this->hasMany(Livestock::class, 'parcel_id', 'id');
     }
 }

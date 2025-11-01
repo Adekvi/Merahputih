@@ -26,10 +26,10 @@
                             <form method="GET" action="{{ route('e-commerce.suply') }}"
                                 class="row gy-2 gx-3 align-items-end" id="filterForm">
                                 <div class="col-md-2">
-                                    <button type="button" class="btn btn-primary rounded-3" data-bs-toggle="modal"
-                                        data-bs-target="#supply">
+                                    <a href="{{ url('e-commerce/market/suply/create') }}"
+                                        class="btn btn-primary rounded-3">
                                         <i class="fa fa-cart-plus" aria-hidden="true"></i> Tambah</i>
-                                    </button>
+                                    </a>
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <label for="id_kecamatan"
@@ -121,7 +121,7 @@
                                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                                         <div class="card product-card h-100 shadow-sm hover-shadow">
                                             <div class="image-container position-relative">
-                                                <img src="{{ $item->gambar ? asset($item->gambar) : asset('aset/img/produk/jagung.jpg') }}"
+                                                <img src="{{ $item->gambar ? Storage::url($item->gambar) : asset('aset/img/produk/jagung.jpg') }}"
                                                     class="card-img-top object-fit-cover w-100"
                                                     alt="{{ $item->nama_barang }}">
                                                 <span
@@ -193,8 +193,6 @@
                 </div>
             </div>
         </div>
-
-        @include('e-commerce.supply.create')s
 
     </div>
 
@@ -431,10 +429,12 @@
                             html: `
                                 <div class="text-start">
                                     <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:15px;">
-                                        <img src="${data.gambar ? '/storage/' + data.gambar : '/aset/img/produk/jagung.jpg'}" alt="${data.nama_barang}" 
+                                        <img 
+                                            src="${data.gambar ? '/storage/' + data.gambar : '/aset/img/produk/jagung.jpg'}"
+                                            alt="${data.nama_barang}" 
+                                            onerror="this.src='/aset/img/produk/jagung.jpg';"
                                             style="width:100%; height:100%; object-fit:cover; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
                                     </div>
-
                                     <div style="background:#fff8f8; border-radius:12px; padding:14px 18px; box-shadow:inset 0 0 6px rgba(168,50,50,0.1); font-size:14px;">
                                         <h5 class="fw-bold mb-2 text-maroon">Detail Produk</h4>
                                         <hr>

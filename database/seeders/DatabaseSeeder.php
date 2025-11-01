@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Seeders\Ecommerce\SatuanSeeder;
 use Database\Seeders\Wilayah\KabupatenSeeder;
 use Database\Seeders\Wilayah\KecamatanSeeder;
+use Database\Seeders\Wilayah\KelurahanSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +23,8 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         $this->call(KabupatenSeeder::class);
         $this->call(KecamatanSeeder::class);
+        $this->call(KelurahanSeeder::class);
+        $this->call(SatuanSeeder::class);
         $this->call(ContohSurveySeeder::class);
 
         // User::factory()->create([

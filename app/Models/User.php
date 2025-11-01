@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\ECommerce\Demand;
+use App\Models\ECommerce\Supply;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -59,5 +61,13 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function suply(){
+        return $this->hasMany(Supply::class, 'user_id');
+    }
+
+    public function demand(){
+        return $this->hasMany(Demand::class, 'user_id');
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ECommerce\BarterController;
 use App\Http\Controllers\ECommerce\DemandController;
 use App\Http\Controllers\ECommerce\SupplyController;
 use App\Http\Controllers\ECommerce\ViewController;
@@ -7,6 +8,8 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SurveyController;
+use App\Models\Ecommerce\Product;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -66,6 +69,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/voice', [SurveyController::class, 'createvoice'])->name('voicecreate');
     });
 
+    Route::get('/ajax/kecamatans/{kecamatan}/kelurahans', [SurveyController::class, 'kelurahansByKecamatan'])
+        ->name('ajax.kelurahans.by.kecamatan');
+
     // E-Commerce View
     Route::get('e-commerce/market', [ViewController::class, 'index'])->name('e-commerce.market');
     Route::get('get-kelurahan', [SupplyController::class, 'getKelurahan'])->name('getKelurahan');
@@ -89,6 +95,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('e-commerce/market/demand/delete/{id}', [DemandController::class, 'delete'])->name('e-commerce.demand.delete');
     Route::post('e-commerce/market/demand/post/{id}', [DemandController::class, 'posting'])
         ->name('e-commerce.demand.post');
+
+    // Barter
+    Route::get('/barter/options', [BarterController::class, 'getBarterOptions'])->name('barter.options');
+
+    Route::post('/barter/{product}', [BarterController::class, 'store'])->name('barter.store');
 });
 
 

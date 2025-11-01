@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('parcels', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('survey_id')->constrained('surveys')->onDelete('cascade');
+             $table->foreignId('survey_id')->constrained('surveys')->onDelete('cascade');
             $table->enum('type', ['persawahan', 'perkebunan', 'tambak', 'peternakan', 'komoditas_lain']);
             $table->decimal('area_hectare', 10, 3)->nullable();
             $table->text('keterangan')->nullable();
-            $table->timestamps();
             $table->index(['survey_id', 'type']);
+            $table->timestamps();
         });
     }
 
