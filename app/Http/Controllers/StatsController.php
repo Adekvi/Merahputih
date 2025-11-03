@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Illuminate\Support\Str;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -249,8 +250,8 @@ class StatsController extends Controller
         $cropRows = $cropQ->selectRaw(
             'LOWER(TRIM(parcels.type)) as type, parcel_crops.nama_tanaman as nama, SUM(COALESCE(parcel_crops.luas_hektare,0)) as luas_sum, SUM(COALESCE(parcel_crops.produksi_ton,0)) as produksi_sum, MIN(parcel_crops.catatan) as catatan'
         )
-        ->groupByRaw('LOWER(TRIM(parcels.type)), parcel_crops.nama_tanaman')
-        ->get();
+            ->groupByRaw('LOWER(TRIM(parcels.type)), parcel_crops.nama_tanaman')
+            ->get();
 
         // 4) ambil livestocks
         $lvQ = Livestock::query()
@@ -265,8 +266,8 @@ class StatsController extends Controller
         $lvRows = $lvQ->selectRaw(
             'LOWER(TRIM(parcels.type)) as type, livestocks.jenis_ternak as nama, SUM(COALESCE(livestocks.jumlah,0)) as jumlah_sum, MIN(livestocks.produksi) as produksi_note'
         )
-        ->groupByRaw('LOWER(TRIM(parcels.type)), livestocks.jenis_ternak')
-        ->get();
+            ->groupByRaw('LOWER(TRIM(parcels.type)), livestocks.jenis_ternak')
+            ->get();
 
         // 5) gabungkan ke struktur yang frontend harapkan
         $acc = [];
@@ -346,125 +347,211 @@ class StatsController extends Controller
     /**
      * ✅ API: Ambil desa penghasil komoditas tertentu
      */
+
     public function getDesaByKomoditas(Request $request)
     {
-        $komoditas = strtolower(trim($request->komoditas));
-        $jenis = strtolower(trim($request->jenis ?? ''));
+        $komoditas = trim((string)$request->query('komoditas', ''));
+        $jenis     = trim((string)$request->query('jenis', ''));
+        $kecParam  = $request->query('kecamatan', null);
+        $desaParam = $request->query('desa', null);
+        $geo       = filter_var($request->query('geo', false), FILTER_VALIDATE_BOOLEAN);
 
-        $exprKec = "kecamatans.nama_kecamatan";
-        $exprDesa = "kelurahans.nama_kelurahan";
+        if ($komoditas === '') {
+            return response()->json([], 200);
+        }
+
+        // helper untuk apply filter kecamatan/desa ke query surveys/joins
+        $applyKecDesaFilters = function ($q) use ($kecParam, $desaParam) {
+            // Kecamatan filter: bisa id numeric atau nama
+            if ($kecParam !== null && $kecParam !== '') {
+                if (is_numeric($kecParam) && Schema::hasColumn('surveys', 'kecamatan_id')) {
+                    $q->where('surveys.kecamatan_id', (int)$kecParam);
+                } else {
+                    // try to match kecamatans table if exists
+                    if (Schema::hasTable('kecamatans')) {
+                        $kecName = mb_strtolower(trim((string)$kecParam));
+                        $q->whereRaw('LOWER(TRIM(kecamatans.nama_kecamatan)) = ?', [$kecName]);
+                    } else {
+                        $q->whereRaw('LOWER(TRIM(surveys.kecamatan)) = ?', [mb_strtolower(trim((string)$kecParam))]);
+                    }
+                }
+            }
+
+            // Desa filter: id numeric -> kelurahan_id; else match name (kelurahans or surveys.desa)
+            if ($desaParam !== null && $desaParam !== '') {
+                if (is_numeric($desaParam) && Schema::hasColumn('surveys', 'kelurahan_id')) {
+                    $q->where('surveys.kelurahan_id', (int)$desaParam);
+                } else {
+                    if (Schema::hasTable('kelurahans')) {
+                        $desaName = mb_strtolower(trim((string)$desaParam));
+                        $q->whereRaw('LOWER(TRIM(kelurahans.nama_kelurahan)) = ?', [$desaName]);
+                    } else {
+                        $q->whereRaw('LOWER(TRIM(surveys.desa)) = ?', [mb_strtolower(trim((string)$desaParam))]);
+                    }
+                }
+            }
+        };
+
+        // We'll build specific queries for each jenis and join to kelurahans + kecamatans + wilayah_locations
+        $exprKec = 'kecamatans.nama_kecamatan';
+        $exprDes = 'kelurahans.nama_kelurahan';
 
         $q = null;
 
-        // 🐄 PETERNakan
-        if ($jenis === 'peternakan') {
+        // PETERNKAN (livestocks)
+        if ($jenis === 'peternakan' || Str::contains($jenis, 'ternak')) {
             $q = DB::table('livestocks')
                 ->join('parcels', 'livestocks.parcel_id', '=', 'parcels.id')
                 ->join('surveys', 'parcels.survey_id', '=', 'surveys.id')
                 ->leftJoin('kecamatans', 'surveys.kecamatan_id', '=', 'kecamatans.id')
                 ->leftJoin('kelurahans', 'surveys.kelurahan_id', '=', 'kelurahans.id')
-                ->whereRaw('LOWER(TRIM(livestocks.jenis_ternak)) = ?', [$komoditas])
+                ->leftJoin('wilayah_locations as l', function ($join) {
+                    $join->on('kelurahans.id', '=', 'l.kelurahan_id')
+                        ->orOn(DB::raw('LOWER(TRIM(kelurahans.nama_kelurahan))'), '=', DB::raw('LOWER(TRIM(l.nama_kelurahan))'));
+                })
+                ->whereRaw('LOWER(TRIM(livestocks.jenis_ternak)) = ?', [mb_strtolower($komoditas)])
                 ->selectRaw("
-                {$exprKec} AS kecamatan,
-                {$exprDesa} AS desa,
-                COALESCE(SUM(livestocks.jumlah), 0) AS jumlah_sum,
-                COALESCE(MIN(livestocks.produksi), '-') AS produksi_note
+                {$exprKec} AS nama_kecamatan,
+                {$exprDes} AS nama_kelurahan,
+                COALESCE(SUM(livestocks.jumlah),0) AS jumlah_sum,
+                COALESCE(MIN(livestocks.produksi), '-') AS produksi_note,
+                l.latitude, l.longitude
             ")
-                ->groupByRaw("{$exprKec}, {$exprDesa}")
-                ->orderByRaw("{$exprKec}");
+                ->groupByRaw("{$exprKec}, {$exprDes}, l.latitude, l.longitude");
+            // apply filters
+            $applyKecDesaFilters($q);
         }
 
-        // 🌾 PERTANIAN (persawahan)
-        if ($jenis === 'pertanian' || $jenis === 'persawahan') {
+        // PERTANIAN / PERSAWAHAN
+        if (($jenis === 'persawahan' || strtolower($jenis) === 'pertanian')) {
             $q = DB::table('parcel_crops')
                 ->join('parcels', 'parcel_crops.parcel_id', '=', 'parcels.id')
                 ->join('surveys', 'parcels.survey_id', '=', 'surveys.id')
                 ->leftJoin('kecamatans', 'surveys.kecamatan_id', '=', 'kecamatans.id')
                 ->leftJoin('kelurahans', 'surveys.kelurahan_id', '=', 'kelurahans.id')
-                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [$komoditas])
+                ->leftJoin('wilayah_locations as l', function ($join) {
+                    $join->on('kelurahans.id', '=', 'l.kelurahan_id')
+                        ->orOn(DB::raw('LOWER(TRIM(kelurahans.nama_kelurahan))'), '=', DB::raw('LOWER(TRIM(l.nama_kelurahan))'));
+                })
+                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [mb_strtolower($komoditas)])
                 ->whereRaw('LOWER(TRIM(parcels.type)) = ?', ['persawahan'])
                 ->selectRaw("
-                {$exprKec} AS kecamatan,
-                {$exprDesa} AS desa,
-                COALESCE(SUM(parcel_crops.luas_hektare), 0) AS luas,
-                COALESCE(SUM(parcel_crops.produksi_ton), 0) AS produksi
+                {$exprKec} AS nama_kecamatan,
+                {$exprDes} AS nama_kelurahan,
+                COALESCE(SUM(parcel_crops.luas_hektare),0) AS luas,
+                COALESCE(SUM(parcel_crops.produksi_ton),0) AS produksi,
+                l.latitude, l.longitude
             ")
-                ->groupByRaw("{$exprKec}, {$exprDesa}")
-                ->orderByRaw("{$exprKec}");
+                ->groupByRaw("{$exprKec}, {$exprDes}, l.latitude, l.longitude");
+            $applyKecDesaFilters($q);
         }
 
-        // 🌴 PERKEBUNAN
+        // PERKEBUNAN
         if ($jenis === 'perkebunan') {
             $q = DB::table('parcel_crops')
                 ->join('parcels', 'parcel_crops.parcel_id', '=', 'parcels.id')
                 ->join('surveys', 'parcels.survey_id', '=', 'surveys.id')
                 ->leftJoin('kecamatans', 'surveys.kecamatan_id', '=', 'kecamatans.id')
                 ->leftJoin('kelurahans', 'surveys.kelurahan_id', '=', 'kelurahans.id')
-                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [$komoditas])
+                ->leftJoin('wilayah_locations as l', function ($join) {
+                    $join->on('kelurahans.id', '=', 'l.kelurahan_id')
+                        ->orOn(DB::raw('LOWER(TRIM(kelurahans.nama_kelurahan))'), '=', DB::raw('LOWER(TRIM(l.nama_kelurahan))'));
+                })
+                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [mb_strtolower($komoditas)])
                 ->whereRaw('LOWER(TRIM(parcels.type)) = ?', ['perkebunan'])
                 ->selectRaw("
-                {$exprKec} AS kecamatan,
-                {$exprDesa} AS desa,
-                COALESCE(SUM(parcel_crops.luas_hektare), 0) AS luas,
-                COALESCE(SUM(parcel_crops.produksi_ton), 0) AS produksi
+                {$exprKec} AS nama_kecamatan,
+                {$exprDes} AS nama_kelurahan,
+                COALESCE(SUM(parcel_crops.luas_hektare),0) AS luas,
+                COALESCE(SUM(parcel_crops.produksi_ton),0) AS produksi,
+                l.latitude, l.longitude
             ")
-                ->groupByRaw("{$exprKec}, {$exprDesa}")
-                ->orderByRaw("{$exprKec}");
+                ->groupByRaw("{$exprKec}, {$exprDes}, l.latitude, l.longitude");
+            $applyKecDesaFilters($q);
         }
 
-        // 🐟 TAMBAK / PERIKANAN
+        // TAMBAK / PERIKANAN
         if (in_array($jenis, ['tambak', 'perikanan'])) {
             $q = DB::table('parcel_crops')
                 ->join('parcels', 'parcel_crops.parcel_id', '=', 'parcels.id')
                 ->join('surveys', 'parcels.survey_id', '=', 'surveys.id')
                 ->leftJoin('kecamatans', 'surveys.kecamatan_id', '=', 'kecamatans.id')
                 ->leftJoin('kelurahans', 'surveys.kelurahan_id', '=', 'kelurahans.id')
-                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [$komoditas])
+                ->leftJoin('wilayah_locations as l', function ($join) {
+                    $join->on('kelurahans.id', '=', 'l.kelurahan_id')
+                        ->orOn(DB::raw('LOWER(TRIM(kelurahans.nama_kelurahan))'), '=', DB::raw('LOWER(TRIM(l.nama_kelurahan))'));
+                })
+                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [mb_strtolower($komoditas)])
                 ->whereRaw('LOWER(TRIM(parcels.type)) = ?', ['tambak'])
                 ->selectRaw("
-                {$exprKec} AS kecamatan,
-                {$exprDesa} AS desa,
-                COALESCE(SUM(parcel_crops.luas_hektare), 0) AS luas,
-                COALESCE(SUM(parcel_crops.produksi_ton), 0) AS produksi
+                {$exprKec} AS nama_kecamatan,
+                {$exprDes} AS nama_kelurahan,
+                COALESCE(SUM(parcel_crops.luas_hektare),0) AS luas,
+                COALESCE(SUM(parcel_crops.produksi_ton),0) AS produksi,
+                l.latitude, l.longitude
             ")
-                ->groupByRaw("{$exprKec}, {$exprDesa}")
-                ->orderByRaw("{$exprKec}");
+                ->groupByRaw("{$exprKec}, {$exprDes}, l.latitude, l.longitude");
+            $applyKecDesaFilters($q);
         }
 
-        // 🧺 KOMODITAS LAIN
-        if ($jenis === 'komoditas_lain') {
+        // KOMODITAS LAIN (default)
+        if (!$q) {
+            // fallback: coba cari di parcel_crops tanpa filter type
             $q = DB::table('parcel_crops')
                 ->join('parcels', 'parcel_crops.parcel_id', '=', 'parcels.id')
                 ->join('surveys', 'parcels.survey_id', '=', 'surveys.id')
                 ->leftJoin('kecamatans', 'surveys.kecamatan_id', '=', 'kecamatans.id')
                 ->leftJoin('kelurahans', 'surveys.kelurahan_id', '=', 'kelurahans.id')
-                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [$komoditas])
-                ->whereRaw('LOWER(TRIM(parcels.type)) NOT IN (?, ?, ?, ?)', ['persawahan', 'perkebunan', 'tambak', 'peternakan'])
+                ->leftJoin('wilayah_locations as l', function ($join) {
+                    $join->on('kelurahans.id', '=', 'l.kelurahan_id')
+                        ->orOn(DB::raw('LOWER(TRIM(kelurahans.nama_kelurahan))'), '=', DB::raw('LOWER(TRIM(l.nama_kelurahan))'));
+                })
+                ->whereRaw('LOWER(TRIM(parcel_crops.nama_tanaman)) = ?', [mb_strtolower($komoditas)])
                 ->selectRaw("
-                {$exprKec} AS kecamatan,
-                {$exprDesa} AS desa,
-                COALESCE(SUM(parcel_crops.luas_hektare), 0) AS luas,
-                COALESCE(SUM(parcel_crops.produksi_ton), 0) AS produksi
+                {$exprKec} AS nama_kecamatan,
+                {$exprDes} AS nama_kelurahan,
+                COALESCE(SUM(parcel_crops.luas_hektare),0) AS luas,
+                COALESCE(SUM(parcel_crops.produksi_ton),0) AS produksi,
+                l.latitude, l.longitude
             ")
-                ->groupByRaw("{$exprKec}, {$exprDesa}")
-                ->orderByRaw("{$exprKec}");
+                ->groupByRaw("{$exprKec}, {$exprDes}, l.latitude, l.longitude");
+            $applyKecDesaFilters($q);
         }
 
-        if (!$q) {
-            return response()->json([]);
-        }
-
-        $result = $q->get()->map(function ($row) {
-            // filter agar yang benar-benar 0 (tanpa data sama sekali) tidak tampil
-            if (
-                (isset($row->jumlah_sum) && $row->jumlah_sum == 0) ||
-                (isset($row->luas) && $row->luas == 0 && $row->produksi == 0)
-            ) {
-                return null;
+        // Ambil data & filter lagi supaya hanya yang memiliki nilai produksi/luas/jumlah > 0 dan ada coords
+        $rows = $q->get()->filter(function ($r) {
+            // produksi/luas/jumlah bisa memakai field yang berbeda tergantung jenis
+            $hasNonZero = false;
+            foreach (['produksi', 'produksi_sum', 'luas', 'jumlah_sum', 'jumlah'] as $f) {
+                if (isset($r->{$f}) && $r->{$f} !== null && floatval($r->{$f}) > 0) {
+                    $hasNonZero = true;
+                    break;
+                }
             }
-            return $row;
-        })->filter()->values();
+            // also require coordinates (if you want to show markers only when coords exist)
+            $hasCoords = isset($r->latitude) && isset($r->longitude) && $r->latitude !== null && $r->longitude !== null;
+            return $hasNonZero && $hasCoords;
+        })->values();
 
-        return response()->json($result);
+        // Jika diminta geojson
+        if ($geo) {
+            $features = $rows->map(function ($r) {
+                return [
+                    'type' => 'Feature',
+                    'geometry' => ['type' => 'Point', 'coordinates' => [(float)$r->longitude, (float)$r->latitude]],
+                    'properties' => [
+                        'nama_kecamatan' => $r->nama_kecamatan ?? null,
+                        'nama_kelurahan' => $r->nama_kelurahan ?? null,
+                        'produksi' => $r->produksi ?? ($r->produksi_sum ?? null),
+                        'luas' => $r->luas ?? null,
+                        'jumlah' => $r->jumlah_sum ?? $r->jumlah ?? null,
+                    ],
+                ];
+            })->values();
+
+            return response()->json(['type' => 'FeatureCollection', 'features' => $features]);
+        }
+
+        return response()->json($rows);
     }
 }

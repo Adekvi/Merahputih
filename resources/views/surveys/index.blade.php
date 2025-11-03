@@ -3,7 +3,6 @@
     <x-slot:title>
         Daftar Desa
     </x-slot:title>
-
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center pt-2 pb-4">
         <div>
             <h3 class="fw-bold mb-2  ms-4 text-maroon"> 📊 Daftar Data Sensus Desa</h3>
@@ -11,6 +10,15 @@
         <div class="date-time mt-3 mt-md-0 text-md-end">
             <div id="tanggal" class="fw-semibold text-muted"></div>
             <div id="jam" class="fw-semibold text-muted"></div>
+        </div>
+        <div class="flex items-center justify-end gap-2 mb-3">
+            <a href="{{ route('surveys.export.excel', request()->query()) }}" class="btn btn-success btn-sm">
+                <i class="fas fa-file-excel me-1"></i> Export Excel
+            </a>
+        
+            <a href="{{ route('surveys.export.pdf', request()->query()) }}" class="btn btn-danger btn-sm" target="_blank">
+                <i class="fas fa-file-pdf me-1"></i> Export PDF
+            </a>
         </div>
     </div>
 

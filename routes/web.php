@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\Master\Wilayah\KecamatanController;
+use App\Http\Controllers\Admin\Master\Wilayah\KelurahanController;
+use App\Http\Controllers\Admin\Master\Wilayah\WilayahLocationController;
 use App\Http\Controllers\ECommerce\BarterController;
 use App\Http\Controllers\ECommerce\DemandController;
 use App\Http\Controllers\ECommerce\SupplyController;
 use App\Http\Controllers\ECommerce\ViewController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
@@ -47,6 +51,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/stats', [StatsController::class, 'index'])->name('stats.index');
+    Route::prefix('master-data')->group(function () {
+        Route::resource('kecamatan', KecamatanController::class);
+        Route::resource('kelurahan', KelurahanController::class);
+        Route::resource('wilayah_locations', WilayahLocationController::class);
+    });
 
     // 🔹 API routes (semua masih bisa diakses setelah login)
     Route::prefix('api')->name('api.')->group(function () {
@@ -56,7 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/komoditas', [StatsController::class, 'getAllKomoditas'])->name('komoditas');
         Route::get('/desa-by-komoditas', [StatsController::class, 'getDesaByKomoditas'])->name('desa_by_komoditas');
     });
-
+    Route::get('/surveys/export/excel', [ExportController::class, 'exportExcel'])->name('surveys.export.excel');
+    Route::get('/surveys/export/pdf', [ExportController::class, 'exportPdf'])->name('surveys.export.pdf');
     /*
     |--------------------------------------------------------------------------
     | CRUD Survey

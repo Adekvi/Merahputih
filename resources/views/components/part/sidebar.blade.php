@@ -95,6 +95,37 @@
                         </ul>
                     </div>
                 </li>
+                <li class="nav-item {{ Request::is('master-data/*') ? 'active' : '' }}">
+                    <a data-bs-toggle="collapse" href="#masterData"
+                        class="{{ Request::is('master-data/*') ? '' : 'collapsed' }}"
+                        aria-expanded="{{ Request::is('master-data/*') ? 'true' : 'false' }}">
+                        <i class="fas fa-database"></i>
+                        <p>Master Data</p>
+                        <span class="caret"></span>
+                    </a>
+
+                    <div class="collapse {{ Request::is('master-data/*') ? 'show' : '' }}" id="masterData">
+                        <ul class="nav nav-collapse">
+                            <li class="{{ Request::is('master-data/kecamatan*') ? 'active' : '' }}">
+                                <a href="{{ route('kecamatan.index') }}">
+                                    <span class="sub-item">Kecamatan</span>
+                                </a>
+                            </li>
+                            <li class="{{ Request::is('master-data/kelurahan*') ? 'active' : '' }}">
+                                <a href="{{ route('kelurahan.index') }}">
+                                    <span class="sub-item">Kelurahan</span>
+                                </a>
+                            </li>
+                            <li class="{{ Request::is('master-data/wilayah_locations*') ? 'active' : '' }}">
+                                <a href="{{ route('wilayah_locations.index') }}">
+                                    <span class="sub-item">Lokasi Wilayah</span>
+                                </a>
+                            </li>
+                            {{-- Kalau nanti ada tambahan master lain, tinggal tambahkan di bawah --}}
+                            {{-- <li><a href="{{ route('desa.index') }}"><span class="sub-item">Desa</span></a></li> --}}
+                        </ul>
+                    </div>
+                </li>
 
                 {{-- <li class="nav-item">
                     <a data-bs-toggle="collapse" href="#submenu">
